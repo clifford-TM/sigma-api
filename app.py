@@ -1,6 +1,6 @@
 from pathlib import Path
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 
 app = FastAPI(title="SIGMA")
@@ -17,6 +17,12 @@ BASE_DIR = Path(__file__).resolve().parent
 PUBLIC = BASE_DIR / "public"
 
 templates = Jinja2Templates(directory=PUBLIC)
+
+@app.get("/", response_class=HTMLResponse)
+async def index():
+    # se o usuário não estiver logado redireciona para login
+    return RedirectResponse(url="/login")
+
 
 @app.get("/login", response_class=HTMLResponse)
 async def login(request: Request):
