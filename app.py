@@ -1,24 +1,34 @@
 from pathlib import Path
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
-from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
 
-app = FastAPI(title="SIGMA API")
+app = FastAPI(title="SIGMA")
 
+"""resolvendo o problema do diretorio 
+__file__ -> nosso arquivo atual (main.py)
+resolve() -> função que converte o caminho do nosso arquivo para diretorio para absoluto
+parent -> sobe um nível de diretório para entender onde main.py está
+"""
+# com essas ponderações consideramos BASE_DIR como SIGMA-API
 BASE_DIR = Path(__file__).resolve().parent
+
+# public estará em SIGMA-API/public
 PUBLIC = BASE_DIR / "public"
 
-# Servir arquivos estáticos (HTML/CSS/JS/imagens) em /static
-app.mount("/static", StaticFiles(directory=str(PUBLIC), html=True), name="static")
+templates = Jinja2Templates(directory=PUBLIC)
 
-#comentário para testar deploy
-@app.get("/", response_class=HTMLResponse)
-def root():
-    index = PUBLIC / "index.html"
-    if index.exists():
-        return index.read_text(encoding="utf-8")
-    return "<h1>SIGMA</h1><p>Backend up. Acesse /static/ para ver os HTMLs.</p>"
+@app.get("/login", response_class=HTMLResponse)
+async def login(request: Request):
+    context = {"request": request, "titulo": "Login"}
+    return templates.TemplateResponse("login.html", context)
 
-@app.get("/health")
-def health():
-    return {"status": "ok", "src": "deploy"}
+# rodar a aplicação uvicorn
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "app:app",
+        host="127.0.0.1",
+        port=8001,
+        reload=True,
+    )
