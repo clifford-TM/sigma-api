@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Editar evento - SIGMA</title>
+  </head>
+  <body>
+    <h1>Editar evento</h1>
+
+    <p>Bem-vindo, {{ usuario.nome }}</p>
+    <p>Evento #{{ evento.id_evento }} — Status: {{ evento.status }}</p>
+
+    {% if erro %}
+      <p style="color: red;">{{ erro }}</p>
+    {% endif %}
+
+    <form action="/professor/eventos/{{ evento.id_evento }}/editar" method="post">
+      <div>
+        <label for="sala_id">Sala</label>
+        <select id="sala_id" name="sala_id" required>
+          <option value="">Selecione</option>
+          {% for sala in salas %}
+            <option
+              value="{{ sala.id_sala }}"
+              {% if valores and valores.sala_id == sala.id_sala %}selected{% endif %}
+            >
+              {{ sala.numero }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="inicio_previsto">Início previsto</label>
+        <input
+          type="datetime-local"
+          id="inicio_previsto"
+          name="inicio_previsto"
+          value="{{ valores.inicio_previsto if valores else '' }}"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="fim_previsto">Fim previsto</label>
+        <input
+          type="datetime-local"
+          id="fim_previsto"
+          name="fim_previsto"
+          value="{{ valores.fim_previsto if valores else '' }}"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="descricao">Descrição</label>
+        <textarea id="descricao" name="descricao" rows="4" cols="50">{{ valores.descricao if valores else '' }}</textarea>
+      </div>
+
+      <div>
+        <button type="submit">Salvar alterações</button>
+      </div>
+    </form>
+
+    <p>
+      <a href="/professor/eventos">Voltar para meus eventos</a>
+    </p>
+  </body>
+</html>

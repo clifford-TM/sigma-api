@@ -11,20 +11,25 @@ router = APIRouter(tags=["auth"])
 templates = Jinja2Templates(directory="public")
 
 
+def destino_por_tipo(user_tipo: str) -> str:
+    if user_tipo == "professor":
+        return "/professor/dashboard"
+    elif user_tipo == "aluno":
+        return "/aluno/dashboard"
+    elif user_tipo == "seguranca":
+        return "/seguranca/dashboard"
+    elif user_tipo == "tecnico":
+        return "/tecnico/dashboard"
+    elif user_tipo == "admin":
+        return "/admin"
+    return "/login"
+
+
 @router.get("/login")
 def login_page(request: Request):
     if request.session.get("user_id"):
         user_tipo = request.session.get("user_tipo")
-
-        if user_tipo == "professor":
-            destino = "/professor/dashboard"
-        elif user_tipo == "aluno":
-            destino = "/aluno/dashboard"
-        elif user_tipo == "seguranca":
-            destino = "/seguranca/dashboard"
-        elif user_tipo == "admin":
-            destino = "/admin"
-
+        destino = destino_por_tipo(user_tipo)
         return RedirectResponse(url=destino, status_code=status.HTTP_303_SEE_OTHER)
 
     return templates.TemplateResponse(
@@ -55,15 +60,10 @@ def login(
     request.session["user_nome"] = user.nome
     request.session["user_tipo"] = user.tipo
 
-    if user.tipo == "professor":
-        destino = "/professor/dashboard"
-    elif user.tipo == "aluno":
-        destino = "/aluno/dashboard"
-    elif user.tipo == "seguranca":
-        destino = "/seguranca/dashboard"
-    elif user.tipo == "admin":
-        destino = '/admin'
+    destino = destino_por_tipo(user.tipo)
+
     return RedirectResponse(url=destino, status_code=status.HTTP_303_SEE_OTHER)
+
 
 @router.get("/logout")
 def logout(request: Request):

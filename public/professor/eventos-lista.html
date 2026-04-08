@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Meus eventos - SIGMA</title>
+  </head>
+  <body>
+    <h1>Meus eventos</h1>
+
+    <p>Bem-vindo, {{ usuario.nome }}</p>
+
+    <nav>
+      <a href="/professor/dashboard">Dashboard</a>
+      <a href="/professor/eventos/novo">Novo evento</a>
+      <a href="/logout">Sair</a>
+    </nav>
+
+    <hr />
+
+    {% if eventos %}
+      <table border="1" cellpadding="8">
+        <thead>
+            <tr>
+            <th>ID</th>
+            <th>Tipo</th>
+            <th>Sala</th>
+            <th>Status</th>
+            <th>Início previsto</th>
+            <th>Fim previsto</th>
+            <th>Descrição</th>
+            <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for evento in eventos %}
+            <tr>
+                <td>{{ evento.id_evento }}</td>
+                <td>{{ evento.tipo }}</td>
+                <td>
+                {% if evento.sala_id in salas %}
+                    {{ salas[evento.sala_id].numero }}
+                {% else %}
+                    Sala não encontrada
+                {% endif %}
+                </td>
+                <td>{{ evento.status }}</td>
+                <td>{{ evento.inicio_previsto if evento.inicio_previsto else "-" }}</td>
+                <td>{{ evento.fim_previsto if evento.fim_previsto else "-" }}</td>
+                <td>{{ evento.descricao if evento.descricao else "-" }}</td>
+                <td>
+                {% if evento.status in ["agendado", "pendente"] %}
+                    <a href="/professor/eventos/{{ evento.id_evento }}/editar">Editar</a>
+                {% else %}
+                    -
+                {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+      <p>Você ainda não possui eventos cadastrados.</p>
+    {% endif %}
+  </body>
+</html>

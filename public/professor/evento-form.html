@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Novo evento - SIGMA</title>
+  </head>
+  <body>
+    <h1>Novo evento de aula</h1>
+
+    <p>Bem-vindo, {{ usuario.nome }}</p>
+
+    {% if erro %}
+      <p style="color: red;">{{ erro }}</p>
+    {% endif %}
+
+    <form action="/professor/eventos" method="post">
+        <div>
+            <label for="tipo">Tipo do evento</label>
+            <select id="tipo" name="tipo" required>
+                <option value="">Selecione</option>
+                <option value="aula" {% if valores and valores.tipo == 'aula' %}selected{% endif %}>Aula</option>
+                <option value="projeto" {% if valores and valores.tipo == 'projeto' %}selected{% endif %}>Projeto</option>
+            </select>
+        </div>
+      <div>
+        <label for="sala_id">Sala</label>
+        <select id="sala_id" name="sala_id" required>
+          <option value="">Selecione</option>
+          {% for sala in salas %}
+            <option
+              value="{{ sala.id_sala }}"
+              {% if valores and valores.sala_id == sala.id_sala %}selected{% endif %}
+            >
+              {{ sala.numero }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="inicio_previsto">Início previsto</label>
+        <input
+          type="datetime-local"
+          id="inicio_previsto"
+          name="inicio_previsto"
+          value="{{ valores.inicio_previsto if valores else '' }}"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="fim_previsto">Fim previsto</label>
+        <input
+          type="datetime-local"
+          id="fim_previsto"
+          name="fim_previsto"
+          value="{{ valores.fim_previsto if valores else '' }}"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="descricao">Descrição</label>
+        <textarea id="descricao" name="descricao" rows="4" cols="50">{{ valores.descricao if valores else '' }}</textarea>
+      </div>
+
+      <div>
+        <button type="submit">Salvar evento</button>
+      </div>
+    </form>
+
+    <p>
+      <a href="/professor/eventos">Voltar para meus eventos</a>
+    </p>
+  </body>
+</html>
