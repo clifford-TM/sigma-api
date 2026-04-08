@@ -22,10 +22,8 @@ def login_page(request: Request):
             destino = "/aluno/dashboard"
         elif user_tipo == "seguranca":
             destino = "/seguranca/dashboard"
-        elif user_tipo == "tecnico":
-            destino = "/tecnico/dashboard"
-        else:
-            destino = "/dashboard"
+        elif user_tipo == "admin":
+            destino = "/admin"
 
         return RedirectResponse(url=destino, status_code=status.HTTP_303_SEE_OTHER)
 
@@ -63,11 +61,8 @@ def login(
         destino = "/aluno/dashboard"
     elif user.tipo == "seguranca":
         destino = "/seguranca/dashboard"
-    elif user.tipo == "tecnico":
-        destino = "/tecnico/dashboard"
-    else:
-        destino = "/dashboard"
-
+    elif user.tipo == "admin":
+        destino = '/admin'
     return RedirectResponse(url=destino, status_code=status.HTTP_303_SEE_OTHER)
 
 @router.get("/logout")

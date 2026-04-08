@@ -45,7 +45,7 @@ def dashboard_aluno(
 
     return templates.TemplateResponse(
         request=request,
-        name="aluno/dashboard.html",
+        name="aluno/index.html",
         context={
             "usuario": current_user,
             "presencas_recentes": presencas_recentes,

@@ -63,7 +63,7 @@ def dashboard_professor(
 
     return templates.TemplateResponse(
         request=request,
-        name="professor/dashboard.html",
+        name="professor/index.html",
         context={
             "usuario": current_user,
             "proximos_eventos": proximos_eventos,

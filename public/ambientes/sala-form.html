@@ -37,22 +37,6 @@
           {% endfor %}
         </select>
       </div>
-
-      <div>
-        <label for="estado_atual_id">Estado inicial</label>
-        <select id="estado_atual_id" name="estado_atual_id" required>
-          <option value="">Selecione</option>
-          {% for estado in estados %}
-            <option
-              value="{{ estado.id_estado_sala }}"
-              {% if valores and valores.estado_atual_id == estado.id_estado_sala %}selected{% endif %}
-            >
-              {{ estado.nome }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-
       <div>
         <button type="submit">Salvar</button>
       </div>
@@ -63,7 +47,7 @@
     </p>
 
     <p>
-      <a href="/dashboard">Dashboard</a>
+      <a href="/admin">Dashboard</a>
       <a href="/logout">Sair</a>
     </p>
   </body>

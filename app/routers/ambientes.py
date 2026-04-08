@@ -66,19 +66,18 @@ def criar_sala(
     request: Request,
     numero: str = Form(...),
     tipo: str = Form(...),
-    estado_atual_id: int = Form(...),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
     if current_user.tipo != "admin":
-        return RedirectResponse(url="/dashboard", status_code=303)
+        return RedirectResponse(url="/admin", status_code=303)
 
     numero = numero.strip()
+    estado_inicial = 1
 
     valores = {
         "numero": numero,
         "tipo": tipo,
-        "estado_atual_id": estado_atual_id,
     }
 
     estados = db.query(EstadoSala).order_by(EstadoSala.nome.asc()).all()
@@ -111,26 +110,11 @@ def criar_sala(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    estado = db.query(EstadoSala).filter(EstadoSala.id_estado_sala == estado_atual_id).first()
-    if not estado:
-        return templates.TemplateResponse(
-            request=request,
-            name="ambientes/sala-form.html",
-            context={
-                "usuario": current_user,
-                "erro": "Estado da sala inválido.",
-                "valores": valores,
-                "tipos": sorted(TIPOS_SALA),
-                "estados": estados,
-            },
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
-
     try:
         nova_sala = Sala(
             numero=numero,
             tipo=tipo,
-            estado_atual_id=estado_atual_id,
+            estado_atual_id=estado_inicial,
         )
         db.add(nova_sala)
         db.commit()
