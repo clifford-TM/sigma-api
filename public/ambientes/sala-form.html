@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cadastrar sala - SIGMA</title>
+  </head>
+  <body>
+    <h1>Cadastrar sala</h1>
+
+    <p>Logado como {{ usuario.nome }} ({{ usuario.tipo }})</p>
+
+    {% if erro %}
+      <p style="color: red;">{{ erro }}</p>
+    {% endif %}
+
+    <form action="/ambientes/salas" method="post">
+      <div>
+        <label for="numero">Número / Identificação</label>
+        <input
+          type="text"
+          id="numero"
+          name="numero"
+          value="{{ valores.numero if valores else '' }}"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="tipo">Tipo</label>
+        <select id="tipo" name="tipo" required>
+          <option value="">Selecione</option>
+          {% for t in tipos %}
+            <option value="{{ t }}" {% if valores and valores.tipo == t %}selected{% endif %}>
+              {{ t }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <label for="estado_atual_id">Estado inicial</label>
+        <select id="estado_atual_id" name="estado_atual_id" required>
+          <option value="">Selecione</option>
+          {% for estado in estados %}
+            <option
+              value="{{ estado.id_estado_sala }}"
+              {% if valores and valores.estado_atual_id == estado.id_estado_sala %}selected{% endif %}
+            >
+              {{ estado.nome }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <button type="submit">Salvar</button>
+      </div>
+    </form>
+
+    <p>
+      <a href="/ambientes/salas">Voltar para salas</a>
+    </p>
+
+    <p>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/logout">Sair</a>
+    </p>
+  </body>
+</html>

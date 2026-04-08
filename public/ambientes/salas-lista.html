@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Salas - SIGMA</title>
+  </head>
+  <body>
+    <h1>Salas</h1>
+
+    <p>Logado como {{ usuario.nome }} ({{ usuario.tipo }})</p>
+
+    <p>
+      <a href="/ambientes/salas/nova">Nova sala</a>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/logout">Sair</a>
+    </p>
+
+    {% if salas %}
+      <table border="1" cellpadding="8">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Sala</th>
+            <th>Tipo</th>
+            <th>Estado atual</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for sala in salas %}
+            <tr>
+              <td>{{ sala.id_sala }}</td>
+              <td>{{ sala.numero }}</td>
+              <td>{{ sala.tipo }}</td>
+              <td>
+                {% if sala.estado_atual_id in estados %}
+                  {{ estados[sala.estado_atual_id].nome }}
+                {% else %}
+                  Estado não encontrado
+                {% endif %}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>Nenhuma sala cadastrada até o momento.</p>
+    {% endif %}
+  </body>
+</html>

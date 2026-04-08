@@ -96,3 +96,22 @@ class Presenca(Base):
         nullable=False,
     )
     valido: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+class EstadoSala(Base):
+    __tablename__ = "estados_sala"
+
+    id_estado_sala: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nome: Mapped[str] = mapped_column(String(40), unique=True, nullable=False)
+    cor: Mapped[str] = mapped_column(String(7), nullable=False)
+    descricao: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+class Sala(Base):
+    __tablename__ = "salas"
+
+    id_sala: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    numero: Mapped[str] = mapped_column(String(20), unique=True, nullable=False)
+    tipo: Mapped[str] = mapped_column(
+        Enum("sala", "laboratorio", "auditorio", name="salas_tipo"),
+        nullable=False,
+    )
+    estado_atual_id: Mapped[int] = mapped_column(ForeignKey("estados_sala.id_estado_sala"), nullable=False)
