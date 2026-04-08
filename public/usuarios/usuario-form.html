@@ -1,45 +1,88 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>Novo usuário - SIGMA</title>
-</head>
-<body>
-  <h1>Cadastrar usuário</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Novo usuário - SIGMA</title>
+  </head>
+  <body>
+    <h1>Cadastrar usuário</h1>
 
-  {% if erro %}
-    <p style="color:red;">{{ erro }}</p>
-  {% endif %}
+    <p>Logado como {{ usuario.nome }} ({{ usuario.tipo }})</p>
 
-  <form action="/usuarios" method="post">
-    <div>
-      <label>Nome</label>
-      <input type="text" name="nome" value="{{ valores.nome if valores else '' }}" required>
-    </div>
+    {% if erro %}
+      <p style="color: red;">{{ erro }}</p>
+    {% endif %}
 
-    <div>
-      <label>Tipo</label>
-      <select name="tipo" required>
-        <option value="">Selecione</option>
-        {% for t in tipos %}
-          <option value="{{ t }}" {% if valores and valores.tipo == t %}selected{% endif %}>{{ t }}</option>
-        {% endfor %}
-      </select>
-    </div>
+    <form action="/usuarios" method="post">
+      <div>
+        <label for="nome">Nome</label>
+        <input
+          type="text"
+          id="nome"
+          name="nome"
+          value="{{ valores.nome if valores else '' }}"
+          required
+        />
+      </div>
 
-    <div>
-      <label>Email</label>
-      <input type="email" name="email" value="{{ valores.email if valores else '' }}" required>
-    </div>
+      <div>
+        <label for="tipo">Tipo</label>
+        <select id="tipo" name="tipo" required>
+          <option value="">Selecione</option>
+          {% for t in tipos %}
+            <option value="{{ t }}" {% if valores and valores.tipo == t %}selected{% endif %}>
+              {{ t }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
 
-    <div>
-      <label>Senha</label>
-      <input type="password" name="senha" required>
-    </div>
+      <div>
+        <label for="email">E-mail</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          value="{{ valores.email if valores else '' }}"
+          required
+        />
+      </div>
 
-    <button type="submit">Salvar</button>
-  </form>
+      <div>
+        <label for="senha">Senha</label>
+        <input
+          type="password"
+          id="senha"
+          name="senha"
+          required
+        />
+      </div>
 
-  <p><a href="/usuarios">Voltar</a></p>
-</body>
+      <div>
+        <label for="codigo_rfid">Código RFID</label>
+        <input
+          type="text"
+          id="codigo_rfid"
+          name="codigo_rfid"
+          value="{{ valores.codigo_rfid if valores else '' }}"
+          maxlength="24"
+          placeholder="Opcional no cadastro inicial"
+        />
+      </div>
+
+      <div>
+        <button type="submit">Salvar</button>
+      </div>
+    </form>
+
+    <p>
+      <a href="/usuarios">Voltar para usuários</a>
+    </p>
+
+    <p>
+      <a href="/dashboard">Dashboard</a>
+      <a href="/logout">Sair</a>
+    </p>
+  </body>
 </html>

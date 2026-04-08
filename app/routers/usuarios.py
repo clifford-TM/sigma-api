@@ -1,11 +1,12 @@
 from fastapi import APIRouter, Depends, Form, Request, status
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import get_current_user
-from app.models import Usuario
+from app.models import RFIDTag, Usuario
 from app.security import hash_password
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
@@ -56,10 +57,33 @@ def criar_usuario(
     tipo: str = Form(...),
     email: str = Form(...),
     senha: str = Form(...),
+    codigo_rfid: str = Form(""),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
-    valores = {"nome": nome, "tipo": tipo, "email": email}
+    nome = nome.strip()
+    email = email.strip().lower()
+    codigo_rfid = codigo_rfid.strip()
+
+    valores = {
+        "nome": nome,
+        "tipo": tipo,
+        "email": email,
+        "codigo_rfid": codigo_rfid,
+    }
+
+    if not nome:
+        return templates.TemplateResponse(
+            request=request,
+            name="usuarios/usuario-form.html",
+            context={
+                "usuario": current_user,
+                "erro": "O nome é obrigatório.",
+                "valores": valores,
+                "tipos": sorted(TIPOS_VALIDOS),
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     if tipo not in TIPOS_VALIDOS:
         return templates.TemplateResponse(
@@ -87,8 +111,8 @@ def criar_usuario(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    existe = db.query(Usuario).filter(Usuario.email == email).first()
-    if existe:
+    existe_email = db.query(Usuario).filter(Usuario.email == email).first()
+    if existe_email:
         return templates.TemplateResponse(
             request=request,
             name="usuarios/usuario-form.html",
@@ -101,14 +125,54 @@ def criar_usuario(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    novo_usuario = Usuario(
-        nome=nome.strip(),
-        tipo=tipo,
-        email=email.strip().lower(),
-        senha=hash_password(senha),
-    )
+    if codigo_rfid:
+        existe_rfid = db.query(RFIDTag).filter(RFIDTag.codigo == codigo_rfid).first()
+        if existe_rfid:
+            return templates.TemplateResponse(
+                request=request,
+                name="usuarios/usuario-form.html",
+                context={
+                    "usuario": current_user,
+                    "erro": "Esse código RFID já está cadastrado.",
+                    "valores": valores,
+                    "tipos": sorted(TIPOS_VALIDOS),
+                },
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
-    db.add(novo_usuario)
-    db.commit()
+    try:
+        novo_usuario = Usuario(
+            nome=nome,
+            tipo=tipo,
+            email=email,
+            senha=hash_password(senha),
+        )
+
+        db.add(novo_usuario)
+        db.flush()
+
+        if codigo_rfid:
+            nova_tag = RFIDTag(
+                usuario_id=novo_usuario.id_usuario,
+                codigo=codigo_rfid,
+                ativa=True,
+            )
+            db.add(nova_tag)
+
+        db.commit()
+
+    except IntegrityError:
+        db.rollback()
+        return templates.TemplateResponse(
+            request=request,
+            name="usuarios/usuario-form.html",
+            context={
+                "usuario": current_user,
+                "erro": "Não foi possível salvar o usuário. Verifique os dados informados.",
+                "valores": valores,
+                "tipos": sorted(TIPOS_VALIDOS),
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     return RedirectResponse(url="/usuarios", status_code=status.HTTP_303_SEE_OTHER)
