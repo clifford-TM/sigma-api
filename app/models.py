@@ -29,3 +29,42 @@ class RFIDTag(Base):
     emitida_em: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     desativada_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     motivo_desativacao: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+class Evento(Base):
+    __tablename__ = "eventos"
+
+    id_evento: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    tipo: Mapped[str] = mapped_column(
+        Enum("aula", "projeto", "limpeza", "inspecao", "manutencao", name="eventos_tipo"),
+        nullable=False,
+    )
+    host: Mapped[int] = mapped_column(ForeignKey("usuarios.id_usuario"), nullable=False)
+    autorizado_por: Mapped[int | None] = mapped_column(ForeignKey("usuarios.id_usuario"), nullable=True)
+    forma_inicio: Mapped[str | None] = mapped_column(
+        Enum("app", "seguranca", "gatilho_porta", name="eventos_forma_inicio"),
+        nullable=True,
+    )
+    confirmado_por_rfid: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    motivo_nao_realizacao: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    sala_id: Mapped[int] = mapped_column(ForeignKey("salas.id_sala"), nullable=False)
+    status: Mapped[str] = mapped_column(
+        Enum(
+            "agendado",
+            "pendente",
+            "ativo",
+            "encerrando",
+            "aguardando_validacao",
+            "finalizado",
+            "cancelado",
+            "nao_realizado",
+            name="eventos_status",
+        ),
+        nullable=False,
+    )
+    descricao: Mapped[str | None] = mapped_column(Text, nullable=True)
+    inicio_previsto: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    fim_previsto: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    inicio_real: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    fim_real: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    atualizado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)

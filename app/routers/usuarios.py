@@ -81,7 +81,7 @@ def criar_usuario(
             name="usuarios/usuario-form.html",
             context={
                 "usuario": current_user,
-                "erro": "O código RFID deve conter apenas números e letras de A até F.",
+                "erro": "O código RFID inválido, verifique a TAG",
                 "valores": valores,
                 "tipos": sorted(TIPOS_VALIDOS),
             },
