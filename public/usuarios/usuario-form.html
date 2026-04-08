@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Novo usuário - SIGMA</title>
+</head>
+<body>
+  <h1>Cadastrar usuário</h1>
+
+  {% if erro %}
+    <p style="color:red;">{{ erro }}</p>
+  {% endif %}
+
+  <form action="/usuarios" method="post">
+    <div>
+      <label>Nome</label>
+      <input type="text" name="nome" value="{{ valores.nome if valores else '' }}" required>
+    </div>
+
+    <div>
+      <label>Tipo</label>
+      <select name="tipo" required>
+        <option value="">Selecione</option>
+        {% for t in tipos %}
+          <option value="{{ t }}" {% if valores and valores.tipo == t %}selected{% endif %}>{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div>
+      <label>Email</label>
+      <input type="email" name="email" value="{{ valores.email if valores else '' }}" required>
+    </div>
+
+    <div>
+      <label>Senha</label>
+      <input type="password" name="senha" required>
+    </div>
+
+    <button type="submit">Salvar</button>
+  </form>
+
+  <p><a href="/usuarios">Voltar</a></p>
+</body>
+</html>
