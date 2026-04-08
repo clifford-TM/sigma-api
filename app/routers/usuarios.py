@@ -8,6 +8,7 @@ from app.db import get_db
 from app.deps import get_current_user
 from app.models import RFIDTag, Usuario
 from app.security import hash_password
+import re
 
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 templates = Jinja2Templates(directory="public")
@@ -63,7 +64,7 @@ def criar_usuario(
 ):
     nome = nome.strip()
     email = email.strip().lower()
-    codigo_rfid = codigo_rfid.strip()
+    codigo_rfid = codigo_rfid.strip().upper()
 
     valores = {
         "nome": nome,
@@ -71,6 +72,21 @@ def criar_usuario(
         "email": email,
         "codigo_rfid": codigo_rfid,
     }
+
+    HEX_RE = re.compile(r"^[0-9A-F]{8,24}$")
+
+    if codigo_rfid and not HEX_RE.match(codigo_rfid):
+        return templates.TemplateResponse(
+            request=request,
+            name="usuarios/usuario-form.html",
+            context={
+                "usuario": current_user,
+                "erro": "O código RFID deve conter apenas números e letras de A até F.",
+                "valores": valores,
+                "tipos": sorted(TIPOS_VALIDOS),
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
 
     if not nome:
         return templates.TemplateResponse(
