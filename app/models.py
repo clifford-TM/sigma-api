@@ -68,3 +68,31 @@ class Evento(Base):
     fim_real: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     atualizado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+class EventoParticipante(Base):
+    __tablename__ = "evento_participantes"
+
+    evento_id: Mapped[int] = mapped_column(ForeignKey("eventos.id_evento"), primary_key=True)
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id_usuario"), primary_key=True)
+    papel: Mapped[str] = mapped_column(
+        Enum("professor", "aluno", "seguranca", "tecnico", name="evento_participantes_papel"),
+        nullable=False,
+    )
+
+class Presenca(Base):
+    __tablename__ = "presencas"
+
+    id_presenca: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    id_evento: Mapped[int] = mapped_column(ForeignKey("eventos.id_evento"), nullable=False)
+    id_usuario: Mapped[int] = mapped_column(ForeignKey("usuarios.id_usuario"), nullable=False)
+    dispositivo_id: Mapped[int | None] = mapped_column(ForeignKey("dispositivos.id_dispositivo"), nullable=True)
+    data_hora: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    tipo: Mapped[str] = mapped_column(
+        Enum("entrada", "saida", name="presencas_tipo"),
+        nullable=False,
+    )
+    origem: Mapped[str] = mapped_column(
+        Enum("rfid", "ajuste_seguranca", "sincronizacao_dispositivo", name="presencas_origem"),
+        nullable=False,
+    )
+    valido: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
