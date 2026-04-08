@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SIGMA — Planta em Tempo Real</title>
+  <meta name="description" content="Visualização da planta das salas com estados em tempo real" />
+</head>
+<body>
+  <header>
+    <h1>SIGMA</h1>
+    <nav>
+      <a href="../seguranca.html">← Dashboard</a>
+      <a href="../seguranca-validacoes.html">Validações</a>
+      <a href="../seguranca-alertas.html">Alertas</a>
+      <a href="salas-tempo-real.html" aria-current="page">Planta (tempo real)</a>
+      <a href="../../../logout.html">Sair</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Planta — Estados das salas</h2>
+    <p>Legenda: [Verde] Aula • [Azul] Limpeza • [Amarelo] Inspeção • [Roxo] Projeto • [Cinza] Livre e Trancada • [Vermelho] Livre e Aberta • [Laranja] Encerrando</p>
+
+    <!-- Filtros básicos (funcionalidade a implementar) -->
+    <section aria-labelledby="filtros">
+      <h3 id="filtros">Filtros</h3>
+      <form method="get" action="/salas">
+        <label for="predio">Prédio</label>
+        <select id="predio" name="predio">
+          <option value="">Todos</option>
+          <option value="P1">P1</option>
+          <option value="P2">P2</option>
+          <option value="P3">P3</option>
+        </select>
+
+        <label for="andar">Andar</label>
+        <select id="andar" name="andar">
+          <option value="">Todos</option>
+          <option value="terreo">Térreo</option>
+          <option value="superior">Superior</option>
+          <option value="labs-superior">Labs Superior</option>
+        </select>
+
+        <label for="estado">Estado</label>
+        <select id="estado" name="estado">
+          <option value="">Todos</option>
+          <option value="em_aula">Em Aula</option>
+          <option value="em_limpeza">Em Limpeza</option>
+          <option value="em_inspecao">Em Inspeção</option>
+          <option value="em_projeto">Em Projeto</option>
+          <option value="livre_trancada">Livre e Trancada</option>
+          <option value="livre_aberta">Livre e Aberta</option>
+          <option value="encerrando">Encerrando</option>
+        </select>
+        <button type="submit">Aplicar</button>
+      </form>
+    </section>
+
+    <!-- P1 -->
+    <section aria-labelledby="p1" id="p1">
+      <h3 id="p1">P1 — Térreo</h3>
+      <figure>
+        <img src="../../../assets/plantas/fatec-p1.jpg" alt="Planta do prédio P1" width="100%" />
+        <figcaption>Mapa P1 (posicionamento provisório). Pontos clicáveis serão adicionados.</figcaption>
+      </figure>
+      <p>
+        <a href="#topo">Voltar ao topo</a>
+      </p>
+    </section>
+
+    <!-- P2 - três variações enviadas -->
+    <section aria-labelledby="p2ls" id="p2ls">
+      <h3 id="p2ls">P2 — Labs Superior</h3>
+      <figure>
+        <img src="../../../assets/plantas/fatec-p2ls.jpg" alt="Planta do P2 Labs Superior" width="100%" />
+        <figcaption>P2 Labs Superior (provisório).</figcaption>
+      </figure>
+    </section>
+
+    <section aria-labelledby="p2s" id="p2s">
+      <h3 id="p2s">P2 — Superior</h3>
+      <figure>
+        <img src="../../../assets/plantas/fatec-p2s.jpg" alt="Planta do P2 Superior" width="100%" />
+        <figcaption>P2 Superior (provisório).</figcaption>
+      </figure>
+    </section>
+
+    <section aria-labelledby="p2t" id="p2t">
+      <h3 id="p2t">P2 — Térreo</h3>
+      <figure>
+        <img src="../../../assets/plantas/fatec-p2t.jpg" alt="Planta do P2 Térreo" width="100%" />
+        <figcaption>P2 Térreo (provisório).</figcaption>
+      </figure>
+    </section>
+
+    <!-- P3 -->
+    <section aria-labelledby="p3" id="p3">
+      <h3 id="p3">P3 — Corredor Salas 302–305 e 311–313</h3>
+      <figure>
+        <img src="../../../assets/plantas/fatec-p3.jpg" alt="Planta do prédio P3" width="100%" />
+        <figcaption>P3 (provisório).</figcaption>
+      </figure>
+    </section>
+
+    <!-- Placeholder para lista clicável de salas (ajuda na navegação) -->
+    <section aria-labelledby="lista-salas">
+      <h3 id="lista-salas">Salas (atalhos rápidos)</h3>
+      <ul>
+        <li><a href="#p1">P1 — Auditório, Biblioteca, Lab 113, Lab 118, Lab Maker…</a></li>
+        <li><a href="#p2ls">P2 — Labs Superior — 253, 254, 801, GAM…</a></li>
+        <li><a href="#p2s">P2 — Superior — 257–264…</a></li>
+        <li><a href="#p2t">P2 — Térreo — 203, 208–211…</a></li>
+        <li><a href="#p3">P3 — 302–305, 311–313…</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <small>© <span id="ano">2025</span> SIGMA • v0.1</small>
+  </footer>
+
+  <script>
+    (function(){
+      var y=document.getElementById('ano'); if(y) y.textContent=new Date().getFullYear();
+    })();
+  </script>
+</body>
+</html>

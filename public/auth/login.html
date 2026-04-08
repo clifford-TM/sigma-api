@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SIGMA — Login</title>
+    <meta name="description" content="Acesso ao SIGMA — Sistema de Gerenciamento e Monitoramento de Ambientes" />
+  </head>
+  <body>
+    <header role="banner">
+      <h1>SIGMA</h1>
+      <p>Sistema de Gerenciamento e Monitoramento de Ambientes</p>
+    </header>
+
+    <main role="main">
+      <!-- Área para mensagens de erro/sucesso controladas por JS -->
+      <section id="mensagens" aria-live="polite" aria-atomic="true">
+        <!-- Exemplo: <div class="erro">Credenciais inválidas.</div> -->
+      </section>
+
+      <!-- Autenticação por credenciais -->
+      <section aria-labelledby="titulo-credenciais">
+        <h2 id="titulo-credenciais">Entrar com credenciais</h2>
+        <form id="login-form" method="post" action="/auth/login" novalidate>
+          <div>
+            <label for="email">E-mail institucional</label>
+            <input
+              type="email"
+              id="email"
+              name="email"
+              autocomplete="username"
+              inputmode="email"
+              required
+            />
+          </div>
+          <div>
+            <label for="senha">Senha</label>
+            <input
+              type="password"
+              id="senha"
+              name="password"
+              autocomplete="current-password"
+              minlength="8"
+              required
+            />
+          </div>
+          <div>
+            <input type="checkbox" id="lembrar" name="remember" />
+            <label for="lembrar">Permanecer conectado</label>
+          </div>
+          <div>
+            <button type="submit">Entrar</button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Autenticação via RFID (opcional) -->
+      <section aria-labelledby="titulo-rfid">
+        <h2 id="titulo-rfid">Entrar com RFID</h2>
+        <p>Encoste sua tag no leitor e clique em “Confirmar leitura”.</p>
+        <form id="rfid-form" method="post" action="/auth/rfid" novalidate>
+          <div>
+            <label for="rfid">Número da tag (preenchido automaticamente)</label>
+            <input
+              type="text"
+              id="rfid"
+              name="rfid"
+              inputmode="numeric"
+              autocomplete="off"
+              aria-describedby="rfid-ajuda"
+              placeholder="Ex.: 04A3F21B"
+            />
+            <small id="rfid-ajuda">Se o leitor estiver conectado, este campo será preenchido automaticamente.</small>
+          </div>
+          <div>
+            <button type="submit">Confirmar leitura</button>
+          </div>
+        </form>
+      </section>
+
+      <nav aria-label="Ações auxiliares">
+        <ul>
+          <li><a href="/auth/forgot">Esqueci minha senha</a></li>
+          <li><a href="/suporte">Suporte</a></li>
+          <!-- Somente admins -->
+          <li><a href="/admin">Área do administrador</a></li>
+        </ul>
+      </nav>
+
+      <!-- Mensagem para navegadores sem JS (progressive enhancement) -->
+      <noscript>
+        <p>Alguns recursos de segurança podem exigir JavaScript habilitado.</p>
+      </noscript>
+    </main>
+
+    <footer role="contentinfo">
+      <small>© <span id="ano">2025</span> SIGMA • v0.1 • Ambiente de testes</small>
+    </footer>
+
+    <!-- Script mínimo opcional apenas para preencher o ano (sem dependências) -->
+    <script>
+      (function () {
+        var el = document.getElementById('ano');
+        if (el) el.textContent = new Date().getFullYear();
+      })();
+    </script>
+  </body>
+</html>

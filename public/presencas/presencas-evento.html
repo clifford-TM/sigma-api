@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SIGMA — Aluno — Presenças</title>
+  <meta name="description" content="Lista de presenças do aluno no SIGMA" />
+</head>
+<body>
+  <header>
+    <h1>SIGMA</h1>
+    <nav>
+      <a href="aluno.html">← Voltar ao painel</a>
+      <a href="/logout">Sair</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Minhas Presenças</h2>
+    <section aria-labelledby="filtros">
+      <h3 id="filtros">Filtros</h3>
+      <form method="get" action="/aluno/presencas">
+        <label for="disciplina">Disciplina</label>
+        <input id="disciplina" name="disciplina" type="text" placeholder="Ex.: Sistemas Digitais" />
+
+        <label for="de">De</label>
+        <input id="de" name="de" type="date" />
+
+        <label for="ate">Até</label>
+        <input id="ate" name="ate" type="date" />
+
+        <button type="submit">Aplicar</button>
+      </form>
+    </section>
+
+    <section aria-labelledby="lista">
+      <h3 id="lista">Registros</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Data</th>
+            <th>Disciplina</th>
+            <th>Sala</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>18/09/2025</td>
+            <td>Sistemas Digitais</td>
+            <td>102</td>
+            <td>Presente</td>
+          </tr>
+          <tr>
+            <td>12/09/2025</td>
+            <td>Microcontroladores</td>
+            <td>203</td>
+            <td>Presente</td>
+          </tr>
+          <tr>
+            <td>05/09/2025</td>
+            <td>Sistemas Digitais</td>
+            <td>102</td>
+            <td>Ausente</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+    <small>© <span id="ano">2025</span> SIGMA • v0.1</small>
+  </footer>
+
+  <script>
+    (function(){var y=document.getElementById('ano'); if(y) y.textContent=new Date().getFullYear();})();
+  </script>
+</body>
+</html>

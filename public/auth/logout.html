@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SIGMA — Logout</title>
+  <meta name="description" content="Confirmação de logout no SIGMA" />
+</head>
+<body>
+  <header>
+    <h1>SIGMA</h1>
+  </header>
+
+  <main>
+    <h2>Logout realizado</h2>
+    <p>Você foi desconectado com sucesso.</p>
+    <p>Em alguns segundos você será redirecionado para a tela de login.</p>
+    <p><a href="login.html">Voltar para o login agora</a></p>
+  </main>
+
+  <footer>
+    <small>© <span id="ano">2025</span> SIGMA • v0.1</small>
+  </footer>
+
+  <script>
+    // Atualiza o ano automaticamente
+    (function () {
+      var y = document.getElementById("ano");
+      if (y) y.textContent = new Date().getFullYear();
+    })();
+
+    // Redireciona para login.html após 3 segundos
+    setTimeout(function () {
+      window.location.href = "login.html";
+    }, 3000);
+  </script>
+</body>
+</html>

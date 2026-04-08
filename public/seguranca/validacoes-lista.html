@@ -1,0 +1,126 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SIGMA — Segurança — Validações & Eventos</title>
+  <meta name="description" content="Tela de validações e gerenciamento de eventos da segurança" />
+</head>
+<body>
+  <header>
+    <h1>SIGMA</h1>
+    <nav>
+      <a href="seguranca.html">← Dashboard</a>
+      <a href="seguranca-validacoes.html" aria-current="page">Validações</a>
+      <a href="seguranca-alertas.html">Alertas</a>
+      <a href="monitor/salas-tempo-real.html">Planta (tempo real)</a>
+      <a href="../../../logout.html">Sair</a>
+    </nav>
+  </header>
+
+  <main>
+    <h2>Validações pendentes</h2>
+
+    <section aria-labelledby="devolucao-chave" id="encerrar-sem-chave">
+      <h3 id="devolucao-chave">Devolução de chave / Encerramento</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>Evento</th>
+            <th>Sala</th>
+            <th>Responsável</th>
+            <th>Status</th>
+            <th>Ações</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Aula — Sistemas Digitais</td>
+            <td>102</td>
+            <td>Prof. João</td>
+            <td>Encerrando evento</td>
+            <td>
+              <a href="seguranca-evento-detalhe.html">Detalhes</a> ·
+              <a href="#">Validar encerramento</a>
+            </td>
+          </tr>
+          <tr>
+            <td>Projeto — Lab. IoT</td>
+            <td>Lab. IoT</td>
+            <td>Ana Souza</td>
+            <td>Aguardando devolução</td>
+            <td>
+              <a href="seguranca-evento-detalhe.html">Detalhes</a> ·
+              <a href="#">Registrar devolução</a> ·
+              <a href="#">Encerrar sem devolução</a>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section aria-labelledby="ajustes-rfid">
+      <h3 id="ajustes-rfid">Ajustes de batidas RFID</h3>
+      <p>Use esta função para corrigir horários de início/fim quando o responsável esqueceu de bater.</p>
+      <form method="post" action="/seguranca/ajustar-batidas">
+        <label for="evento-id">ID do evento</label>
+        <input id="evento-id" name="evento_id" type="text" placeholder="Ex.: EVT-0001" required />
+
+        <label for="novo-inicio">Novo início</label>
+        <input id="novo-inicio" name="novo_inicio" type="datetime-local" />
+
+        <label for="novo-fim">Novo fim</label>
+        <input id="novo-fim" name="novo_fim" type="datetime-local" />
+
+        <button type="submit">Aplicar ajuste</button>
+      </form>
+    </section>
+
+    <section aria-labelledby="perda-tag" id="perda-tag">
+      <h3 id="perda-tag">Perda/Substituição de Tag</h3>
+      <form method="post" action="/seguranca/perda-tag" novalidate>
+        <label for="usuario">Usuário</label>
+        <input id="usuario" name="usuario" type="text" placeholder="Nome ou matrícula" required />
+
+        <label for="tag-antiga">Tag antiga</label>
+        <input id="tag-antiga" name="tag_antiga" type="text" placeholder="#TAG12345" />
+
+        <label for="tag-nova">Tag nova</label>
+        <input id="tag-nova" name="tag_nova" type="text" placeholder="#TAG98765" required />
+
+        <button type="submit">Registrar</button>
+      </form>
+    </section>
+
+    <section aria-labelledby="regularizar-sala" id="regularizar-sala">
+      <h3 id="regularizar-sala">Regularizar estado da sala</h3>
+      <form method="post" action="/seguranca/regularizar-sala">
+        <label for="sala">Sala</label>
+        <input id="sala" name="sala" type="text" placeholder="Ex.: 102 ou Lab. IoT" required />
+
+        <label for="estado">Novo estado</label>
+        <select id="estado" name="estado" required>
+          <option value="">Selecione…</option>
+          <option value="livre_trancada">Livre e Trancada (Cinza)</option>
+          <option value="livre_aberta">Livre e Aberta (Vermelho)</option>
+          <option value="em_aula">Em Aula (Verde)</option>
+          <option value="em_limpeza">Em Limpeza (Azul)</option>
+          <option value="em_inspecao">Em Inspeção (Amarelo)</option>
+          <option value="em_projeto">Em Projeto (Roxo)</option>
+          <option value="encerrando">Encerrando Evento (Laranja)</option>
+        </select>
+
+        <button type="submit">Aplicar</button>
+      </form>
+    </section>
+  </main>
+
+  <footer>
+    <small>© <span id="ano">2025</span> SIGMA • v0.1</small>
+  </footer>
+
+  <script>
+    (function(){var y=document.getElementById('ano'); if(y) y.textContent=new Date().getFullYear();})();
+  </script>
+</body>
+</html>

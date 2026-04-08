@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SIGMA — Segurança (Dashboard)</title>
+  <meta name="description" content="Painel principal da segurança no SIGMA" />
+</head>
+<body>
+  <header>
+    <h1>SIGMA</h1>
+    <p>Painel da Segurança</p>
+    <nav aria-label="Navegação principal">
+      <a href="seguranca.html" aria-current="page">Dashboard</a>
+      <a href="seguranca-validacoes.html">Validações</a>
+      <a href="seguranca-alertas.html">Alertas</a>
+      <a href="monitor/salas-tempo-real.html">Planta (tempo real)</a>
+      <a href="../../../logout.html">Sair</a>
+    </nav>
+  </header>
+
+  <main>
+    <section aria-labelledby="turno">
+      <h2 id="turno">Meu turno</h2>
+      <p><strong>Nome:</strong> Carlos Pereira</p>
+      <p><strong>Horário:</strong> 08:00 — 18:00</p>
+      <p><strong>Salas sob responsabilidade:</strong> 101, 102, 201, 203, Lab. IoT, Lab. Redes</p>
+    </section>
+
+    <hr />
+
+    <section aria-labelledby="resumo">
+      <h2 id="resumo">Resumo do turno</h2>
+      <ul>
+        <li><strong>Validações pendentes:</strong> 3</li>
+        <li><strong>Eventos em andamento:</strong> 4</li>
+        <li><strong>Alertas críticos:</strong> 1</li>
+      </ul>
+      <p>
+        <a href="seguranca-validacoes.html">Abrir validações</a> ·
+        <a href="seguranca-alertas.html">Ver alertas</a> ·
+        <a href= "monitor/salas-tempo-real.html">Abrir planta em tempo real</a>
+      </p>
+    </section>
+
+    <hr />
+
+    <section aria-labelledby="acoes-rapidas">
+      <h2 id="acoes-rapidas">Ações rápidas</h2>
+      <ul>
+        <li><a href="seguranca-validacoes.html#encerrar-sem-chave">Encerrar evento — sem devolução de chave</a></li>
+        <li><a href="seguranca-validacoes.html#perda-tag">Registrar perda/substituição de tag</a></li>
+        <li><a href="seguranca-validacoes.html#regularizar-sala">Marcar sala como trancada/regularizar estado</a></li>
+      </ul>
+    </section>
+  </main>
+
+  <footer>
+    <small>© <span id="ano">2025</span> SIGMA • v0.1</small>
+  </footer>
+
+  <script>
+    (function(){var y=document.getElementById('ano'); if(y) y.textContent=new Date().getFullYear();})();
+  </script>
+</body>
+</html>
