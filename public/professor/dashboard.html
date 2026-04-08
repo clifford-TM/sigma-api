@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dashboard do Professor - SIGMA</title>
+  </head>
+  <body>
+    <h1>Dashboard do Professor</h1>
+
+    <p>Bem-vindo, {{ usuario.nome }}</p>
+
+    <nav>
+      <a href="/dashboard">Dashboard geral</a>
+      <a href="/usuarios">Usuários</a>
+      <a href="/logout">Sair</a>
+    </nav>
+
+    <hr />
+
+    <section>
+      <h2>Próximos eventos</h2>
+
+      {% if proximos_eventos %}
+        <ul>
+          {% for evento in proximos_eventos %}
+            <li>
+              <strong>{{ evento.tipo|capitalize }}</strong>
+              — Sala {{ evento.sala_id }}
+              — Status: {{ evento.status }}
+              {% if evento.inicio_previsto %}
+                — Início previsto: {{ evento.inicio_previsto }}
+              {% endif %}
+              <button type="button">Iniciar evento</button>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>Nenhum evento agendado no momento.</p>
+      {% endif %}
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Eventos em andamento</h2>
+
+      {% if eventos_em_andamento %}
+        <ul>
+          {% for evento in eventos_em_andamento %}
+            <li>
+              <strong>{{ evento.tipo|capitalize }}</strong>
+              — Sala {{ evento.sala_id }}
+              — Status: {{ evento.status }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>Não há eventos em andamento.</p>
+      {% endif %}
+    </section>
+
+    <hr />
+
+    <section>
+      <h2>Projetos pendentes de aprovação</h2>
+
+      {% if projetos_pendentes %}
+        <ul>
+          {% for projeto in projetos_pendentes %}
+            <li>
+              <strong>{{ projeto.descricao if projeto.descricao else "Projeto sem descrição" }}</strong>
+              — Sala {{ projeto.sala_id }}
+              — Status: {{ projeto.status }}
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>Não há projetos pendentes de aprovação.</p>
+      {% endif %}
+    </section>
+  </body>
+</html>

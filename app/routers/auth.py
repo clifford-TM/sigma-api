@@ -44,8 +44,18 @@ def login(
     request.session["user_nome"] = user.nome
     request.session["user_tipo"] = user.tipo
 
-    return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+    if user.tipo == "professor":
+        destino = "/professor/dashboard"
+    elif user.tipo == "aluno":
+        destino = "/aluno/dashboard"
+    elif user.tipo == "seguranca":
+        destino = "/seguranca/dashboard"
+    elif user.tipo == "tecnico":
+        destino = "/tecnico/dashboard"
+    else:
+        destino = "/dashboard"
 
+    return RedirectResponse(url=destino, status_code=status.HTTP_303_SEE_OTHER)
 
 @router.get("/logout")
 def logout(request: Request):
