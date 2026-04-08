@@ -14,7 +14,20 @@ templates = Jinja2Templates(directory="public")
 @router.get("/login")
 def login_page(request: Request):
     if request.session.get("user_id"):
-        return RedirectResponse(url="/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+        user_tipo = request.session.get("user_tipo")
+
+        if user_tipo == "professor":
+            destino = "/professor/dashboard"
+        elif user_tipo == "aluno":
+            destino = "/aluno/dashboard"
+        elif user_tipo == "seguranca":
+            destino = "/seguranca/dashboard"
+        elif user_tipo == "tecnico":
+            destino = "/tecnico/dashboard"
+        else:
+            destino = "/dashboard"
+
+        return RedirectResponse(url=destino, status_code=status.HTTP_303_SEE_OTHER)
 
     return templates.TemplateResponse(
         request=request,
