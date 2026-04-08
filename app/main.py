@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.routers import admin, auth, usuarios, professor, aluno, ambientes
+from app.routers import admin, auth, usuarios, professor, aluno, ambientes, dispositivos
 
 load_dotenv()
 
@@ -24,3 +24,4 @@ app.include_router(usuarios.router)
 app.include_router(professor.router)
 app.include_router(aluno.router)
 app.include_router(ambientes.router)
+app.include_router(dispositivos.router)

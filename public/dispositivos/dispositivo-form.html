@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Cadastrar dispositivo - SIGMA</title>
+  </head>
+  <body>
+    <h1>Cadastrar dispositivo</h1>
+
+    <p>Logado como {{ usuario.nome }} ({{ usuario.tipo }})</p>
+
+    {% if erro %}
+      <p style="color: red;">{{ erro }}</p>
+    {% endif %}
+
+    <form action="/dispositivos" method="post">
+      <div>
+        <label for="nome">Nome</label>
+        <input
+          type="text"
+          id="nome"
+          name="nome"
+          value="{{ valores.nome if valores else '' }}"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="identificador_fisico">Identificador físico</label>
+        <input
+          type="text"
+          id="identificador_fisico"
+          name="identificador_fisico"
+          value="{{ valores.identificador_fisico if valores else '' }}"
+          placeholder="ex.: esp32_lab01_ctrl"
+          required
+        />
+      </div>
+
+      <div>
+        <label for="sala_id">Sala vinculada</label>
+        <select id="sala_id" name="sala_id" required>
+          <option value="">Selecione</option>
+          {% for sala in salas %}
+            <option
+              value="{{ sala.id_sala }}"
+              {% if valores and valores.sala_id == sala.id_sala %}selected{% endif %}
+            >
+              {{ sala.numero }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
+        <input
+          type="checkbox"
+          id="ativo"
+          name="ativo"
+          {% if not valores or valores.ativo %}checked{% endif %}
+        />
+        <label for="ativo">Dispositivo ativo</label>
+      </div>
+
+      <div>
+        <button type="submit">Salvar</button>
+      </div>
+    </form>
+
+    <p>
+      <a href="/dispositivos">Voltar para dispositivos</a>
+    </p>
+
+    <p>
+      <a href="/admin">Dashboard</a>
+      <a href="/logout">Sair</a>
+    </p>
+  </body>
+</html>

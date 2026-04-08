@@ -18,7 +18,6 @@ class Usuario(Base):
     email: Mapped[str] = mapped_column(String(191), unique=True, nullable=False)
     senha: Mapped[str] = mapped_column(String(60), nullable=False)
 
-
 class RFIDTag(Base):
     __tablename__ = "rfid_tags"
 
@@ -115,3 +114,14 @@ class Sala(Base):
         nullable=False,
     )
     estado_atual_id: Mapped[int] = mapped_column(ForeignKey("estados_sala.id_estado_sala"), nullable=False)
+
+class Dispositivo(Base):
+    __tablename__ = "dispositivos"
+
+    id_dispositivo: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    sala_id: Mapped[int] = mapped_column(ForeignKey("salas.id_sala"), nullable=False)
+    nome: Mapped[str] = mapped_column(String(80), nullable=False)
+    identificador_fisico: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
+    ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    ultima_comunicacao: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    criado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)

@@ -2,18 +2,17 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard - SIGMA</title>
+  <title>Dashboard do Administrador - SIGMA</title>
 </head>
 <body>
   <h1>Dashboard do Administrador</h1>
+  <p>Bem-vindo, {{ usuario.nome }} ({{ usuario.tipo }})</p>
 
-<p>Bem-vindo, {{ usuario.nome }}</p>
-
-<nav>
+  <nav>
     <a href="/usuarios">Usuários</a>
     <a href="/ambientes/salas">Salas</a>
-    <a href="/ambientes/dispositivos">Dispositivos</a>
+    <a href="/dispositivos">Dispositivos</a>
     <a href="/logout">Sair</a>
-</nav>
+  </nav>
 </body>
 </html>

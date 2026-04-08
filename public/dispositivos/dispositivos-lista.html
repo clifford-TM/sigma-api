@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Dispositivos - SIGMA</title>
+  </head>
+  <body>
+    <h1>Dispositivos</h1>
+
+    <p>Logado como {{ usuario.nome }} ({{ usuario.tipo }})</p>
+
+    <p>
+      <a href="/dispositivos/novo">Novo dispositivo</a>
+      <a href="/admin">Dashboard</a>
+      <a href="/logout">Sair</a>
+    </p>
+
+    {% if dispositivos %}
+      <table border="1" cellpadding="8">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Nome</th>
+            <th>Identificador físico</th>
+            <th>Sala</th>
+            <th>Ativo</th>
+            <th>Última comunicação</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for dispositivo in dispositivos %}
+            <tr>
+              <td>{{ dispositivo.id_dispositivo }}</td>
+              <td>{{ dispositivo.nome }}</td>
+              <td>{{ dispositivo.identificador_fisico }}</td>
+              <td>
+                {% if dispositivo.sala_id in salas %}
+                  {{ salas[dispositivo.sala_id].numero }}
+                {% else %}
+                  Sala não encontrada
+                {% endif %}
+              </td>
+              <td>{{ "Sim" if dispositivo.ativo else "Não" }}</td>
+              <td>
+                {{ dispositivo.ultima_comunicacao if dispositivo.ultima_comunicacao else "-" }}
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>Nenhum dispositivo cadastrado até o momento.</p>
+    {% endif %}
+  </body>
+</html>
