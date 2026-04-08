@@ -198,6 +198,13 @@ def criar_evento_professor(
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+    
+    # caso seja projeto
+    autorizado_por = (
+    current_user.id_usuario
+    if tipo == "projeto"
+    else None
+)
     try:
         inicio_dt = datetime.fromisoformat(inicio_previsto)
         fim_dt = datetime.fromisoformat(fim_previsto)
@@ -254,7 +261,7 @@ def criar_evento_professor(
     novo_evento = Evento(
         tipo=tipo,
         host=current_user.id_usuario,
-        autorizado_por=None,
+        autorizado_por=autorizado_por,
         forma_inicio="app",
         confirmado_por_rfid=False,
         sala_id=sala_id,
@@ -321,7 +328,6 @@ def formulario_editar_evento(
             "salas": salas,
         },
     )
-
 
 @router.post("/eventos/{evento_id}/editar")
 def atualizar_evento_professor(
@@ -450,3 +456,196 @@ def atualizar_evento_professor(
         url="/professor/eventos",
         status_code=status.HTTP_303_SEE_OTHER,
     )
+
+@router.get("/eventos/{evento_id}/cancelar")
+def formulario_cancelar_evento(
+    evento_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not professor_autenticado(current_user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    evento = (
+        db.query(Evento)
+        .filter(
+            Evento.id_evento == evento_id,
+            Evento.host == current_user.id_usuario,
+        )
+        .first()
+    )
+
+    if not evento or evento.status not in ["agendado", "pendente"]:
+        return RedirectResponse(
+            url="/professor/eventos",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="professor/evento-cancelar.html",
+        context={
+            "usuario": current_user,
+            "evento": evento,
+            "erro": None,
+        },
+    )
+
+@router.post("/eventos/{evento_id}/cancelar")
+def cancelar_evento(
+    evento_id: int,
+    request: Request,
+    motivo: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not professor_autenticado(current_user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    evento = (
+        db.query(Evento)
+        .filter(
+            Evento.id_evento == evento_id,
+            Evento.host == current_user.id_usuario,
+        )
+        .first()
+    )
+
+    if not evento or evento.status not in ["agendado", "pendente"]:
+        return RedirectResponse(
+            url="/professor/eventos",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    motivo = motivo.strip()
+
+    if not motivo:
+        return templates.TemplateResponse(
+            request=request,
+            name="professor/evento-cancelar.html",
+            context={
+                "usuario": current_user,
+                "evento": evento,
+                "erro": "Informe uma justificativa para cancelar o evento.",
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    evento.status = "cancelado"
+    evento.motivo_nao_realizacao = motivo
+
+    db.commit()
+
+    return RedirectResponse(
+        url="/professor/eventos",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+@router.get("/projetos/{evento_id}/aprovar")
+def aprovar_projeto(
+    evento_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not professor_autenticado(current_user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    evento = (
+        db.query(Evento)
+        .filter(
+            Evento.id_evento == evento_id,
+            Evento.tipo == "projeto",
+            Evento.autorizado_por == current_user.id_usuario,
+            Evento.status == "pendente",
+        )
+        .first()
+    )
+
+    if not evento:
+        return RedirectResponse(url="/professor/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
+    evento.status = "agendado"
+    db.commit()
+
+    return RedirectResponse(url="/professor/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
+@router.get("/projetos/{evento_id}/reprovar")
+def formulario_reprovar_projeto(
+    evento_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not professor_autenticado(current_user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    evento = (
+        db.query(Evento)
+        .filter(
+            Evento.id_evento == evento_id,
+            Evento.tipo == "projeto",
+            Evento.autorizado_por == current_user.id_usuario,
+            Evento.status == "pendente",
+        )
+        .first()
+    )
+
+    if not evento:
+        return RedirectResponse(url="/professor/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
+    return templates.TemplateResponse(
+        request=request,
+        name="professor/projeto-reprovar.html",
+        context={
+            "usuario": current_user,
+            "evento": evento,
+            "erro": None,
+        },
+    )
+
+@router.post("/projetos/{evento_id}/reprovar")
+def reprovar_projeto(
+    evento_id: int,
+    request: Request,
+    motivo: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not professor_autenticado(current_user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    evento = (
+        db.query(Evento)
+        .filter(
+            Evento.id_evento == evento_id,
+            Evento.tipo == "projeto",
+            Evento.autorizado_por == current_user.id_usuario,
+            Evento.status == "pendente",
+        )
+        .first()
+    )
+
+    if not evento:
+        return RedirectResponse(url="/professor/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
+    motivo = motivo.strip()
+
+    if not motivo:
+        return templates.TemplateResponse(
+            request=request,
+            name="professor/projeto-reprovar.html",
+            context={
+                "usuario": current_user,
+                "evento": evento,
+                "erro": "Informe uma justificativa para reprovar o projeto.",
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    evento.status = "cancelado"
+    evento.motivo_nao_realizacao = motivo
+    db.commit()
+
+    return RedirectResponse(url="/professor/dashboard", status_code=status.HTTP_303_SEE_OTHER)

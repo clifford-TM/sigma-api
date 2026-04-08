@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Meus projetos - SIGMA</title>
+  </head>
+  <body>
+    <h1>Meus projetos</h1>
+
+    <p>Bem-vindo, {{ usuario.nome }}</p>
+
+    <nav>
+      <a href="/aluno/dashboard">Dashboard</a>
+      <a href="/aluno/projetos/novo">Solicitar projeto</a>
+      <a href="/logout">Sair</a>
+    </nav>
+
+    <hr />
+
+    {% if projetos %}
+      <table border="1" cellpadding="8">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Sala</th>
+            <th>Professor autorizador</th>
+            <th>Status</th>
+            <th>Início previsto</th>
+            <th>Fim previsto</th>
+            <th>Descrição</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for projeto in projetos %}
+            <tr>
+              <td>{{ projeto.id_evento }}</td>
+              <td>
+                {% if projeto.sala_id in salas %}
+                  {{ salas[projeto.sala_id].numero }}
+                {% else %}
+                  Sala não encontrada
+                {% endif %}
+              </td>
+              <td>
+                {% if projeto.autorizado_por in professores %}
+                  {{ professores[projeto.autorizado_por].nome }}
+                {% else %}
+                  Não definido
+                {% endif %}
+              </td>
+              <td>{{ projeto.status }}</td>
+              <td>{{ projeto.inicio_previsto if projeto.inicio_previsto else "-" }}</td>
+              <td>{{ projeto.fim_previsto if projeto.fim_previsto else "-" }}</td>
+              <td>{{ projeto.descricao if projeto.descricao else "-" }}</td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <p>Você ainda não possui projetos cadastrados.</p>
+    {% endif %}
+  </body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Cancelar evento</title>
+  </head>
+  <body>
+    <h1>Cancelar evento</h1>
+
+    <p>Evento #{{ evento.id_evento }}</p>
+    <p>{{ evento.tipo }} - {{ evento.descricao }}</p>
+
+    {% if erro %}
+      <p style="color: red;">{{ erro }}</p>
+    {% endif %}
+
+    <form method="post" action="/professor/eventos/{{ evento.id_evento }}/cancelar">
+      <div>
+        <label for="motivo">Justificativa</label><br />
+        <textarea
+          id="motivo"
+          name="motivo"
+          rows="5"
+          cols="60"
+          required
+        ></textarea>
+      </div>
+
+      <br />
+
+      <button type="submit">Confirmar cancelamento</button>
+      <a href="/professor/eventos">Voltar</a>
+    </form>
+  </body>
+</html>

@@ -49,11 +49,13 @@
                 <td>{{ evento.fim_previsto if evento.fim_previsto else "-" }}</td>
                 <td>{{ evento.descricao if evento.descricao else "-" }}</td>
                 <td>
-                {% if evento.status in ["agendado", "pendente"] %}
-                    <a href="/professor/eventos/{{ evento.id_evento }}/editar">Editar</a>
-                {% else %}
+                    {% if evento.status in ["agendado", "pendente"] %}
+                        <a href="/professor/eventos/{{ evento.id_evento }}/editar">Editar</a>
+                        |
+                        <a href="/professor/eventos/{{ evento.id_evento }}/cancelar">Cancelar</a>
+                    {% else %}
                     -
-                {% endif %}
+                    {% endif %}
                 </td>
             </tr>
             {% endfor %}

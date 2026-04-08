@@ -70,8 +70,16 @@
           {% for projeto in projetos_pendentes %}
             <li>
               <strong>{{ projeto.descricao if projeto.descricao else "Projeto sem descrição" }}</strong>
-              — Sala {{ projeto.sala_id }}
+              —
+              {% if projeto.sala_id in salas %}
+                {{ salas[projeto.sala_id].numero }}
+              {% else %}
+                Sala {{ projeto.sala_id }}
+              {% endif %}
               — Status: {{ projeto.status }}
+              <a href="/professor/projetos/{{ projeto.id_evento }}/aprovar">Aprovar</a>
+              |
+              <a href="/professor/projetos/{{ projeto.id_evento }}/reprovar">Reprovar</a>
             </li>
           {% endfor %}
         </ul>

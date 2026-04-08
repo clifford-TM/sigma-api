@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Reprovar projeto</title>
+  </head>
+  <body>
+    <h1>Reprovar projeto</h1>
+
+    <p>Bem-vindo, {{ usuario.nome }}</p>
+    <p>Projeto #{{ evento.id_evento }}</p>
+    <p>{{ evento.descricao if evento.descricao else "Projeto sem descrição" }}</p>
+
+    {% if erro %}
+      <p style="color: red;">{{ erro }}</p>
+    {% endif %}
+
+    <form method="post" action="/professor/projetos/{{ evento.id_evento }}/reprovar">
+      <div>
+        <label for="motivo">Justificativa</label><br />
+        <textarea id="motivo" name="motivo" rows="5" cols="60" required></textarea>
+      </div>
+
+      <br />
+
+      <button type="submit">Confirmar reprovação</button>
+      <a href="/professor/dashboard">Voltar</a>
+    </form>
+  </body>
+</html>

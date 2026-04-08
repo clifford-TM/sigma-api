@@ -2,7 +2,6 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Dashboard do Aluno - SIGMA</title>
   </head>
   <body>
@@ -11,55 +10,40 @@
     <p>Bem-vindo, {{ usuario.nome }}</p>
 
     <nav>
+      <a href="/aluno/projetos">Meus projetos</a>
+      <a href="/aluno/projetos/novo">Solicitar projeto</a>
       <a href="/logout">Sair</a>
     </nav>
 
     <hr />
 
     <section>
-      <h2>Minhas presenças recentes</h2>
-
-      {% if presencas_recentes %}
-        <ul>
-          {% for presenca in presencas_recentes %}
-            <li>
-              Evento {{ presenca.id_evento }}
-              — {{ presenca.tipo }}
-              — {{ presenca.data_hora }}
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p>Nenhuma presença registrada até o momento.</p>
-      {% endif %}
-    </section>
-
-    <hr />
-
-    <section>
-      <h2>Projetos</h2>
+      <h2>Projetos solicitados</h2>
 
       {% if projetos %}
         <ul>
           {% for projeto in projetos %}
             <li>
               <strong>{{ projeto.descricao if projeto.descricao else "Projeto sem descrição" }}</strong>
-              — Sala {{ projeto.sala_id }}
+              — Sala:
+              {% if projeto.sala_id in salas %}
+                {{ salas[projeto.sala_id].numero }}
+              {% else %}
+                Sala não encontrada
+              {% endif %}
+              — Professor:
+              {% if projeto.autorizado_por in professores %}
+                {{ professores[projeto.autorizado_por].nome }}
+              {% else %}
+                Não definido
+              {% endif %}
               — Status: {{ projeto.status }}
             </li>
           {% endfor %}
         </ul>
       {% else %}
-        <p>Você ainda não participa de nenhum projeto.</p>
+        <p>Você ainda não possui projetos solicitados.</p>
       {% endif %}
-    </section>
-
-    <hr />
-
-    <section>
-      <h2>Novo projeto</h2>
-      <p>Em breve, você poderá solicitar um novo projeto por aqui.</p>
-      <button type="button" disabled>Solicitar projeto</button>
     </section>
   </body>
 </html>
