@@ -1,0 +1,95 @@
+<!-- public/seguranca/dashboard.html -->
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard da Segurança</title>
+</head>
+<body>
+    <h1>Dashboard da Segurança</h1>
+
+    <p>Bem-vindo, {{ usuario.nome }}</p>
+
+    <nav>
+        <a href="/seguranca/dashboard">Dashboard</a> |
+        <a href="/seguranca/salas">Visão Geral das Salas</a> |
+        <a href="/seguranca/validacoes">Validações</a> |
+        <a href="/logout">Sair</a>
+    </nav>
+
+    <hr>
+
+    <h2>Próximos Eventos</h2>
+
+    {% if proximos_eventos %}
+        <ul>
+        {% for evento in proximos_eventos %}
+            <li>
+                <strong>{{ evento.tipo|capitalize }}</strong>
+                -
+                Sala {{ salas[evento.sala_id].numero if evento.sala_id in salas else evento.sala_id }}
+                -
+                {{ evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") }}
+                até
+                {{ evento.fim_previsto.strftime("%H:%M") }}
+                -
+                Responsável:
+                {{ usuarios[evento.host].nome if evento.host in usuarios else "Desconhecido" }}
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Nenhum próximo evento encontrado.</p>
+    {% endif %}
+
+    <hr>
+
+    <h2>Eventos em Andamento</h2>
+
+    {% if eventos_em_andamento %}
+        <ul>
+        {% for evento in eventos_em_andamento %}
+            <li>
+                <strong>{{ evento.tipo|capitalize }}</strong>
+                -
+                Sala {{ salas[evento.sala_id].numero if evento.sala_id in salas else evento.sala_id }}
+                -
+                Responsável:
+                {{ usuarios[evento.host].nome if evento.host in usuarios else "Desconhecido" }}
+                -
+                Status: {{ evento.status }}
+
+                <a href="/seguranca/eventos/{{ evento.id_evento }}/encerrar-forcado">
+                    Encerrar Evento
+                </a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Nenhum evento em andamento.</p>
+    {% endif %}
+
+    <hr>
+
+    <h2>Eventos Aguardando Validação</h2>
+
+    {% if aguardando_validacao %}
+        <ul>
+        {% for evento in aguardando_validacao %}
+            <li>
+                Sala {{ salas[evento.sala_id].numero if evento.sala_id in salas else evento.sala_id }}
+                -
+                {{ evento.descricao if evento.descricao else evento.tipo }}
+                -
+                <a href="/seguranca/validacoes/{{ evento.id_evento }}">
+                    Realizar inspeção
+                </a>
+            </li>
+        {% endfor %}
+        </ul>
+    {% else %}
+        <p>Não há eventos aguardando validação.</p>
+    {% endif %}
+</body>
+</html>

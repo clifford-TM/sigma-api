@@ -125,3 +125,33 @@ class Dispositivo(Base):
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     ultima_comunicacao: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+
+class Validacao(Base):
+    __tablename__ = "validacoes"
+
+    id_validacao: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    evento_id: Mapped[int] = mapped_column(ForeignKey("eventos.id_evento"), nullable=False, unique=True)
+    seguranca_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id_usuario"), nullable=False)
+    data_validacao: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    status: Mapped[str] = mapped_column(
+        Enum("aprovado", "reprovado", "pendente", name="validacoes_status"),
+        nullable=False,
+    )
+    observacoes: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+class Ocorrencia(Base):
+    __tablename__ = "ocorrencias"
+
+    id_ocorrencia: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    evento_id: Mapped[int | None] = mapped_column(ForeignKey("eventos.id_evento"), nullable=True)
+    sala_id: Mapped[int | None] = mapped_column(ForeignKey("salas.id_sala"), nullable=True)
+    registrada_por: Mapped[int] = mapped_column(ForeignKey("usuarios.id_usuario"), nullable=False)
+    tipo: Mapped[str] = mapped_column(String(60), nullable=False)
+    descricao: Mapped[str] = mapped_column(String(255), nullable=False)
+    data_ocorrencia: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    severidade: Mapped[str | None] = mapped_column(
+        Enum("baixa", "media", "alta", name="ocorrencias_severidade"),
+        nullable=True,
+    )
+    resolvida: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    resolvida_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

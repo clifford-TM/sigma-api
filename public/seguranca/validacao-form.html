@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Validação de evento - SIGMA</title>
+  </head>
+  <body>
+    <h1>Validação / Inspeção</h1>
+
+    <p>Segurança: {{ usuario.nome }}</p>
+
+    <p><strong>Evento:</strong> #{{ evento.id_evento }} - {{ evento.tipo }}</p>
+    <p><strong>Descrição:</strong> {{ evento.descricao if evento.descricao else "-" }}</p>
+    <p><strong>Responsável:</strong> {{ host.nome if host else "Não encontrado" }}</p>
+    <p><strong>Sala:</strong> {{ sala.numero if sala else "Não encontrada" }}</p>
+    <p><strong>Status atual:</strong> {{ evento.status }}</p>
+
+    {% if erro %}
+      <p style="color: red;">{{ erro }}</p>
+    {% endif %}
+
+    <form action="/seguranca/validacoes/{{ evento.id_evento }}" method="post">
+      <div>
+        <label for="chave_devolvida">Chave devolvida?</label>
+        <select id="chave_devolvida" name="chave_devolvida" required>
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="sala_em_ordem">Sala em ordem?</label>
+        <select id="sala_em_ordem" name="sala_em_ordem" required>
+          <option value="sim">Sim</option>
+          <option value="nao">Não</option>
+        </select>
+      </div>
+
+      <div>
+        <label for="observacoes">Observações</label><br />
+        <textarea id="observacoes" name="observacoes" rows="4" cols="60"></textarea>
+      </div>
+
+      <div>
+        <input type="checkbox" id="registrar_ocorrencia" name="registrar_ocorrencia" />
+        <label for="registrar_ocorrencia">Registrar ocorrência</label>
+      </div>
+
+      <div>
+        <label for="descricao_ocorrencia">Descrição da ocorrência</label><br />
+        <textarea id="descricao_ocorrencia" name="descricao_ocorrencia" rows="4" cols="60"></textarea>
+      </div>
+
+      <div>
+        <label for="severidade">Severidade</label>
+        <select id="severidade" name="severidade">
+          <option value="baixa">Baixa</option>
+          <option value="media" selected>Média</option>
+          <option value="alta">Alta</option>
+        </select>
+      </div>
+
+      <br />
+
+      <button type="submit">Concluir validação</button>
+      <a href="/seguranca/validacoes">Voltar</a>
+    </form>
+  </body>
+</html>

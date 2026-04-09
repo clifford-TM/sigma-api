@@ -1,0 +1,124 @@
+<!-- public/seguranca/salas.html -->
+
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Visão Geral das Salas</title>
+
+    <style>
+        .grade-salas {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+
+        .card-sala {
+            border: 1px solid #ccc;
+            border-radius: 12px;
+            padding: 16px;
+            background: #f7f7f7;
+        }
+
+        .livre {
+            border-left: 8px solid #2ecc71;
+        }
+
+        .ocupada {
+            border-left: 8px solid #f39c12;
+        }
+
+        .inspecao {
+            border-left: 8px solid #3498db;
+        }
+
+        .problema {
+            border-left: 8px solid #e74c3c;
+        }
+
+        .evento {
+            margin-top: 10px;
+            padding: 8px;
+            background: white;
+            border-radius: 8px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Visão Geral das Salas</h1>
+
+    <nav>
+        <a href="/seguranca/dashboard">Dashboard</a> |
+        <a href="/seguranca/salas">Salas</a> |
+        <a href="/seguranca/validacoes">Validações</a> |
+        <a href="/logout">Sair</a>
+    </nav>
+
+    <div class="grade-salas">
+        {% for sala in salas %}
+
+            {% set classe = "livre" %}
+
+            {% if sala.id_sala in eventos_por_sala %}
+                {% for evento in eventos_por_sala[sala.id_sala] %}
+                    {% if evento.status == "aguardando_validacao" %}
+                        {% set classe = "inspecao" %}
+                    {% elif evento.status in ["ativo", "encerrando"] %}
+                        {% set classe = "ocupada" %}
+                    {% elif evento.status in ["agendado", "pendente"] %}
+                        {% set classe = "problema" %}
+                    {% endif %}
+                {% endfor %}
+            {% endif %}
+
+            <div class="card-sala {{ classe }}">
+                <h2>{{ sala.numero }}</h2>
+
+                <p>
+                    <strong>Tipo:</strong>
+                    {{ sala.tipo }}
+                </p>
+
+                {% if sala.id_sala in eventos_por_sala %}
+                    {% for evento in eventos_por_sala[sala.id_sala] %}
+                        <div class="evento">
+                            <p>
+                                <strong>{{ evento.tipo|capitalize }}</strong>
+                            </p>
+
+                            <p>
+                                Status: {{ evento.status }}
+                            </p>
+
+                            <p>
+                                Responsável:
+                                {{ usuarios[evento.host].nome if evento.host in usuarios else "Desconhecido" }}
+                            </p>
+
+                            <p>
+                                {{ evento.inicio_previsto.strftime("%d/%m %H:%M") }}
+                                →
+                                {{ evento.fim_previsto.strftime("%H:%M") }}
+                            </p>
+
+                            {% if evento.status == "aguardando_validacao" %}
+                                <a href="/seguranca/validacoes/{{ evento.id_evento }}">
+                                    Fazer inspeção
+                                </a>
+                            {% elif evento.status in ["ativo", "encerrando"] %}
+                                <a href="/seguranca/eventos/{{ evento.id_evento }}/encerrar-forcado">
+                                    Encerrar
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p>Sala livre.</p>
+                {% endif %}
+            </div>
+
+        {% endfor %}
+    </div>
+</body>
+</html>
