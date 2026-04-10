@@ -1,4 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
+from typing import Optional
 
 
 class LoginForm(BaseModel):
@@ -21,3 +22,21 @@ class UsuarioOut(BaseModel):
 
     class Config:
         from_attributes = True
+
+class DevicePollRequest(BaseModel):
+    dispositivo_id: int
+
+
+class DeviceCommandResponse(BaseModel):
+    ok: bool
+    comando: str
+    command_id: Optional[int] = None
+    mensagem: Optional[str] = None
+
+
+class DeviceReplyRequest(BaseModel):
+    dispositivo_id: int
+    command_id: int
+    status: str
+    detalhe: Optional[str] = None
+ 

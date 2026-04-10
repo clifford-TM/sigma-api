@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.routers import admin, auth, usuarios, professor, aluno, ambientes, dispositivos, seguranca
+from app.routers import admin, auth, usuarios, professor, aluno, ambientes, dispositivos, seguranca, esp
 
 load_dotenv()
 
