@@ -26,3 +26,4 @@ app.include_router(aluno.router)
 app.include_router(ambientes.router)
 app.include_router(dispositivos.router)
 app.include_router(seguranca.router)
+app.include_router(esp.router) # inclusao da rota do esp teste 3
