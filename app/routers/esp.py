@@ -19,9 +19,10 @@ def validar_token(x_device_token: Optional[str]) -> None:
 
 
 @router.post("/enviar-teste")
-def enviar_teste_oled(
+def enviar_teste_esp(
     dispositivo_id: int,
     mensagem: str,
+    comando: str = "mostrar_oled",
 ):
     global command_counter
 
@@ -30,7 +31,7 @@ def enviar_teste_oled(
 
     pending_commands[dispositivo_id] = {
         "command_id": command_id,
-        "comando": "mostrar_oled",
+        "comando": comando,
         "mensagem": mensagem,
     }
 
@@ -39,6 +40,7 @@ def enviar_teste_oled(
         "message": "Comando de teste registrado",
         "command_id": command_id,
         "dispositivo_id": dispositivo_id,
+        "comando": comando,
     }
 
 
