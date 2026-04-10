@@ -26,17 +26,18 @@ class UsuarioOut(BaseModel):
 class DevicePollRequest(BaseModel):
     dispositivo_id: int
 
-
 class DeviceCommandResponse(BaseModel):
     ok: bool
     comando: str
     command_id: Optional[int] = None
     mensagem: Optional[str] = None
 
-
 class DeviceReplyRequest(BaseModel):
     dispositivo_id: int
     command_id: int
     status: str
     detalhe: Optional[str] = None
- 
+
+class TagReadRequest(BaseModel):
+    dispositivo_id: int
+    tag_uid: str

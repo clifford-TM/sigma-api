@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Header, HTTPException
 from typing import Optional
 
-from app.schemas import DevicePollRequest, DeviceCommandResponse, DeviceReplyRequest
+from app.schemas import DevicePollRequest, DeviceCommandResponse, DeviceReplyRequest, TagReadRequest
 
 router = APIRouter(prefix="/api/dispositivo", tags=["dispositivo"])
 
@@ -86,4 +86,15 @@ def responder_comando(
         "command_id": payload.command_id,
         "status": payload.status,
         "detalhe": payload.detalhe,
+    }
+
+@router.post("/tag")
+def receber_tag(payload: TagReadRequest, x_device_token: Optional[str] = Header(default=None)):
+    validar_token(x_device_token)
+
+    return {
+        "ok": True,
+        "mensagem": "Tag recebida com sucesso",
+        "tag_uid": payload.tag_uid,
+        "dispositivo_id": payload.dispositivo_id,
     }
