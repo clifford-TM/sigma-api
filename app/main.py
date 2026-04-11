@@ -4,7 +4,9 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
 
-from app.routers import admin, auth, usuarios, professor, aluno, ambientes, dispositivos, seguranca, esp
+from app.routers import (admin, auth, usuarios, professor, 
+                         aluno, ambientes, dispositivos, 
+                         seguranca, esp, eventos)
 
 load_dotenv()
 
@@ -26,4 +28,5 @@ app.include_router(aluno.router)
 app.include_router(ambientes.router)
 app.include_router(dispositivos.router)
 app.include_router(seguranca.router)
-app.include_router(esp.router) # inclusao da rota do esp teste 3
+app.include_router(esp.router) 
+app.include_router(eventos.router)

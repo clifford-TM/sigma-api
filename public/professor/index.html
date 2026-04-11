@@ -4,7 +4,60 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Dashboard do Professor - SIGMA</title>
+
+    <script>
+      async function iniciarEvento(eventoId) {
+        try {
+          const resposta = await fetch(`/eventos/${eventoId}/disparar-inicio`, {
+            method: "POST"
+          });
+
+          const dados = await resposta.json();
+
+          if (resposta.ok) {
+            alert(
+              "Comando enviado ao dispositivo da sala.\n\nAproxime a tag do responsável no leitor RFID."
+            );
+            location.reload();
+          } else {
+            alert(
+              "Erro ao iniciar evento: " +
+                (dados.detail || "erro desconhecido")
+            );
+          }
+        } catch (erro) {
+          console.error(erro);
+          alert("Falha ao comunicar com o servidor.");
+        }
+      }
+
+      async function encerrarEvento(eventoId) {
+        try {
+          const resposta = await fetch(`/eventos/${eventoId}/disparar-encerramento`, {
+            method: "POST"
+          });
+
+          const dados = await resposta.json();
+
+          if (resposta.ok) {
+            alert(
+              "Pedido de encerramento enviado.\n\nAproxime novamente a tag do responsável no leitor RFID."
+            );
+            location.reload();
+          } else {
+            alert(
+              "Erro ao encerrar evento: " +
+                (dados.detail || "erro desconhecido")
+            );
+          }
+        } catch (erro) {
+          console.error(erro);
+          alert("Falha ao comunicar com o servidor.");
+        }
+      }
+    </script>
   </head>
+
   <body>
     <h1>Dashboard do Professor</h1>
 
@@ -12,7 +65,9 @@
 
     <nav>
       <a href="/professor/eventos">Meus eventos</a>
+      |
       <a href="/professor/eventos/novo">Novo evento</a>
+      |
       <a href="/logout">Sair</a>
     </nav>
 
@@ -26,12 +81,26 @@
           {% for evento in proximos_eventos %}
             <li>
               <strong>{{ evento.tipo|capitalize }}</strong>
-              — Sala {{ evento.sala_id }}
+
+              —
+              {% if evento.sala_id in salas %}
+                Sala {{ salas[evento.sala_id].numero }}
+              {% else %}
+                Sala {{ evento.sala_id }}
+              {% endif %}
+
               — Status: {{ evento.status }}
+
               {% if evento.inicio_previsto %}
                 — Início previsto: {{ evento.inicio_previsto }}
               {% endif %}
-              <button type="button">Iniciar evento</button>
+
+              <button
+                type="button"
+                onclick="iniciarEvento({{ evento.id_evento }})"
+              >
+                Iniciar evento
+              </button>
             </li>
           {% endfor %}
         </ul>
@@ -50,8 +119,26 @@
           {% for evento in eventos_em_andamento %}
             <li>
               <strong>{{ evento.tipo|capitalize }}</strong>
-              — Sala {{ evento.sala_id }}
+
+              —
+              {% if evento.sala_id in salas %}
+                Sala {{ salas[evento.sala_id].numero }}
+              {% else %}
+                Sala {{ evento.sala_id }}
+              {% endif %}
+
               — Status: {{ evento.status }}
+
+              {% if evento.inicio_real %}
+                — Iniciado em: {{ evento.inicio_real }}
+              {% endif %}
+
+              <button
+                type="button"
+                onclick="encerrarEvento({{ evento.id_evento }})"
+              >
+                Encerrar evento
+              </button>
             </li>
           {% endfor %}
         </ul>
@@ -69,17 +156,28 @@
         <ul>
           {% for projeto in projetos_pendentes %}
             <li>
-              <strong>{{ projeto.descricao if projeto.descricao else "Projeto sem descrição" }}</strong>
+              <strong>
+                {{ projeto.descricao if projeto.descricao else "Projeto sem descrição" }}
+              </strong>
+
               —
               {% if projeto.sala_id in salas %}
                 {{ salas[projeto.sala_id].numero }}
               {% else %}
                 Sala {{ projeto.sala_id }}
               {% endif %}
+
               — Status: {{ projeto.status }}
-              <a href="/professor/projetos/{{ projeto.id_evento }}/aprovar">Aprovar</a>
+
+              <a href="/professor/projetos/{{ projeto.id_evento }}/aprovar">
+                Aprovar
+              </a>
+
               |
-              <a href="/professor/projetos/{{ projeto.id_evento }}/reprovar">Reprovar</a>
+
+              <a href="/professor/projetos/{{ projeto.id_evento }}/reprovar">
+                Reprovar
+              </a>
             </li>
           {% endfor %}
         </ul>
