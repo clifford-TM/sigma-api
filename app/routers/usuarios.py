@@ -191,4 +191,4 @@ def criar_usuario(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    return RedirectResponse(url="/usuarios", status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(url="/usuarios/", status_code=status.HTTP_303_SEE_OTHER)
