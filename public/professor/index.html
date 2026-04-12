@@ -6,31 +6,6 @@
     <title>Dashboard do Professor - SIGMA</title>
 
     <script>
-      async function iniciarEvento(eventoId) {
-        try {
-          const resposta = await fetch(`/eventos/${eventoId}/disparar-inicio`, {
-            method: "POST"
-          });
-
-          const dados = await resposta.json();
-
-          if (resposta.ok) {
-            alert(
-              "Comando enviado ao dispositivo da sala.\n\nAproxime a tag do responsável no leitor RFID."
-            );
-            location.reload();
-          } else {
-            alert(
-              "Erro ao iniciar evento: " +
-                (dados.detail || "erro desconhecido")
-            );
-          }
-        } catch (erro) {
-          console.error(erro);
-          alert("Falha ao comunicar com o servidor.");
-        }
-      }
-
       async function encerrarEvento(eventoId) {
         try {
           const resposta = await fetch(`/eventos/${eventoId}/disparar-fim`, {
@@ -95,12 +70,9 @@
                 — Início previsto: {{ evento.inicio_previsto }}
               {% endif %}
 
-              <button
-                type="button"
-                onclick="iniciarEvento({{ evento.id_evento }})"
-              >
-                Iniciar evento
-              </button>
+              <form action="/eventos/{{ evento.id_evento }}/iniciar" method="post" style="display:inline;">
+                <button type="submit">Iniciar evento</button>
+              </form>
             </li>
           {% endfor %}
         </ul>

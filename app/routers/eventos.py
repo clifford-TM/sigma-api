@@ -548,16 +548,39 @@ def cancelar_evento(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
+    
     evento.status = "cancelado"
     evento.motivo_nao_realizacao = motivo
 
-    db.commit()
-
-    return RedirectResponse(
-        url=rota_lista_por_tipo(current_user.tipo),
-        status_code=status.HTTP_303_SEE_OTHER,
+    comandos_pendentes = (
+        db.query(ComandoDispositivo)
+        .filter(
+            ComandoDispositivo.status == "pendente",
+            ComandoDispositivo.payload_json.contains(
+                f'"evento_id":{evento.id_evento}'
+            )
+        )
+        .all()
     )
 
+    # fallback caso o JSON tenha espaço após os :
+    if not comandos_pendentes:
+        comandos_pendentes = (
+            db.query(ComandoDispositivo)
+            .filter(
+                ComandoDispositivo.status == "pendente",
+                ComandoDispositivo.payload_json.contains(
+                    f'"evento_id": {evento.id_evento}'
+                )
+            )
+            .all()
+        )
+
+    for comando in comandos_pendentes:
+        comando.status = "cancelado"
+        comando.consumido_em = datetime.utcnow()
+
+    db.commit()
 
 @router.post("/{evento_id}/iniciar")
 def iniciar_evento(
