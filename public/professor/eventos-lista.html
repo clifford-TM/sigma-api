@@ -44,18 +44,55 @@
                     Sala não encontrada
                 {% endif %}
                 </td>
-                <td>{{ evento.status }}</td>
+                <td>
+                  {% if evento.status == "agendado" %}
+                      Agendado
+                  {% elif evento.status == "pendente" %}
+                      Aguardando RFID
+                  {% elif evento.status == "ativo" %}
+                      Em andamento
+                  {% elif evento.status == "finalizado" %}
+                      Finalizado
+                  {% elif evento.status == "cancelado" %}
+                      Cancelado
+                  {% else %}
+                      {{ evento.status }}
+                  {% endif %}
+                </td>
                 <td>{{ evento.inicio_previsto if evento.inicio_previsto else "-" }}</td>
                 <td>{{ evento.fim_previsto if evento.fim_previsto else "-" }}</td>
                 <td>{{ evento.descricao if evento.descricao else "-" }}</td>
                 <td>
-                    {% if evento.status in ["agendado", "pendente"] %}
-                        <a href="/professor/eventos/{{ evento.id_evento }}/editar">Editar</a>
-                        |
-                        <a href="/professor/eventos/{{ evento.id_evento }}/cancelar">Cancelar</a>
-                    {% else %}
-                    -
-                    {% endif %}
+                  {% if evento.status == "agendado" %}
+                      <form
+                          action="/professor/eventos/{{ evento.id_evento }}/iniciar"
+                          method="post"
+                          style="display:inline;"
+                      >
+                          <button type="submit">Iniciar</button>
+                      </form>
+
+                      |
+
+                      <a href="/professor/eventos/{{ evento.id_evento }}/editar">Editar</a>
+
+                      |
+
+                      <a href="/professor/eventos/{{ evento.id_evento }}/cancelar">Cancelar</a>
+
+                  {% elif evento.status == "pendente" %}
+                      Aguardando confirmação no dispositivo...
+
+                      |
+
+                      <a href="/professor/eventos/{{ evento.id_evento }}/cancelar">Cancelar</a>
+
+                  {% elif evento.status == "ativo" %}
+                      Evento em andamento
+
+                  {% else %}
+                      -
+                  {% endif %}
                 </td>
             </tr>
             {% endfor %}

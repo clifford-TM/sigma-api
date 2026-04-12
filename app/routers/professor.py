@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, Form, Request, status
@@ -7,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import get_current_user
-from app.models import Evento, Sala, Usuario
+from app.models import Evento, Sala, Usuario, Dispositivo, ComandoDispositivo
 
 router = APIRouter(prefix="/professor", tags=["professor"])
 templates = Jinja2Templates(directory="public")
@@ -649,3 +650,60 @@ def reprovar_projeto(
     db.commit()
 
     return RedirectResponse(url="/professor/dashboard", status_code=status.HTTP_303_SEE_OTHER)
+
+@router.post("/eventos/{evento_id}/iniciar")
+def iniciar_evento(
+    evento_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not professor_autenticado(current_user):
+        return RedirectResponse("/login", status_code=303)
+
+    evento = (
+        db.query(Evento)
+        .filter(
+            Evento.id_evento == evento_id,
+            Evento.host == current_user.id_usuario,
+            Evento.status.in_(["agendado", "pendente"])
+        )
+        .first()
+    )
+
+    if not evento:
+        return RedirectResponse("/professor/eventos", status_code=303)
+
+    dispositivo = (
+        db.query(Dispositivo)
+        .filter(
+            Dispositivo.sala_id == evento.sala_id,
+            Dispositivo.ativo == True
+        )
+        .first()
+    )
+
+    if not dispositivo:
+        return RedirectResponse("/professor/eventos", status_code=303)
+
+    comando = ComandoDispositivo(
+        device_id=dispositivo.identificador_fisico,
+        acao="iniciar_evento",
+        payload_json=json.dumps({
+            "evento_id": evento.id_evento,
+            "sala_id": evento.sala_id,
+            "host_id": current_user.id_usuario,
+            "host_nome": current_user.nome,
+            "tipo": evento.tipo
+        }),
+        status="pendente"
+    )
+
+    evento.status = "pendente"
+
+    db.add(comando)
+    db.commit()
+
+    return RedirectResponse(
+        url=f"/professor/eventos/{evento_id}",
+        status_code=303
+    )

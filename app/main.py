@@ -6,7 +6,7 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from app.routers import (admin, auth, usuarios, professor, 
                          aluno, ambientes, dispositivos, 
-                         seguranca, esp, eventos)
+                         seguranca, eventos)
 
 load_dotenv()
 
@@ -28,5 +28,4 @@ app.include_router(aluno.router)
 app.include_router(ambientes.router)
 app.include_router(dispositivos.router)
 app.include_router(seguranca.router)
-app.include_router(esp.router) 
 app.include_router(eventos.router)

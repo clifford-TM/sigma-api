@@ -95,7 +95,7 @@ def disparar_inicio_evento(
     return {"ok": True, "mensagem": "Comando registrado para o dispositivo."}
 
 
-@router.post("/{evento_id}/disparar-inicio")
+@router.post("/{evento_id}/disparar-fim")
 def disparar_encerramento_evento(
     evento_id: int,
     db: Session = Depends(get_db),
@@ -143,17 +143,11 @@ def disparar_encerramento_evento(
 # =========================
 
 @router.post("/{evento_id}/autorizar-inicio")
-def autorizar_inicio_evento(
+def autorizar_inicio(
     evento_id: int,
-    payload: TagAuthRequest,
-    db: Session = Depends(get_db),
+    uid: str,
+    db: Session = Depends(get_db)
 ):
-    uid = normalizar_uid(payload.uid)
-
-    evento = db.query(Evento).filter(Evento.id_evento == evento_id).first()
-    if not evento:
-        raise HTTPException(status_code=404, detail="Evento não encontrado.")
-
     tag = (
         db.query(RFIDTag)
         .filter(
@@ -164,29 +158,30 @@ def autorizar_inicio_evento(
     )
 
     if not tag:
-        raise HTTPException(status_code=403, detail="Tag não cadastrada.")
+        raise HTTPException(status_code=404, detail="Tag não encontrada")
 
-    usuario = db.query(Usuario).filter(Usuario.id_usuario == tag.usuario_id).first()
-    if not usuario:
-        raise HTTPException(status_code=403, detail="Usuário da tag não encontrado.")
+    evento = (
+        db.query(Evento)
+        .filter(Evento.id_evento == evento_id)
+        .first()
+    )
 
-    # Regra simples:
-    # só o host do evento pode autorizar início
-    if usuario.id_usuario != evento.host:
-        raise HTTPException(status_code=403, detail="Usuário não autorizado para iniciar o evento.")
+    if not evento:
+        raise HTTPException(status_code=404, detail="Evento não encontrado")
+
+    if tag.usuario_id != evento.host:
+        raise HTTPException(status_code=403, detail="Tag não pertence ao responsável pelo evento")
 
     evento.status = "ativo"
-    if hasattr(evento, "inicio_real") and not evento.inicio_real:
-        evento.inicio_real = datetime.now()
+    evento.confirmado_por_rfid = True
+    evento.forma_inicio = "app"
+    evento.inicio_real = datetime.utcnow()
 
     db.commit()
 
     return {
         "ok": True,
-        "mensagem": "Início autorizado.",
-        "usuario_id": usuario.id_usuario,
-        "usuario_nome": usuario.nome,
-        "evento_id": evento.id_evento,
+        "mensagem": "Evento iniciado com sucesso"
     }
 
 
@@ -296,37 +291,37 @@ def obter_comando_pendente(device_id: str, db: Session = Depends(get_db)):
     )
 
     if not comando:
-        return {"acao": "nenhuma"}
+        return {"acao": None}
 
     payload = json.loads(comando.payload_json) if comando.payload_json else {}
 
     return {
-        "acao": comando.acao,
         "comando_id": comando.id_comando,
+        "acao": comando.acao,
         "payload": payload
     }
 
 @router.post("/dispositivos/{device_id}/confirmar-comando")
 def confirmar_comando(
     device_id: str,
-    payload: ConfirmarComandoPayload,
-    db: Session = Depends(get_db),
+    comando_id: int,
+    db: Session = Depends(get_db)
 ):
     comando = (
         db.query(ComandoDispositivo)
         .filter(
-            ComandoDispositivo.id_comando == payload.comando_id,
-            ComandoDispositivo.device_id == device_id,
-            ComandoDispositivo.status == "pendente"
+            ComandoDispositivo.id_comando == comando_id,
+            ComandoDispositivo.device_id == device_id
         )
         .first()
     )
 
     if not comando:
-        raise HTTPException(status_code=404, detail="Comando não encontrado.")
+        raise HTTPException(status_code=404, detail="Comando não encontrado")
 
     comando.status = "consumido"
-    comando.consumido_em = datetime.now()
+    comando.consumido_em = datetime.utcnow()
+
     db.commit()
 
     return {"ok": True}
