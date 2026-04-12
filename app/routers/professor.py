@@ -704,6 +704,6 @@ def iniciar_evento(
     db.commit()
 
     return RedirectResponse(
-        url=f"/professor/eventos/{evento_id}",
+        url=f"/professor/eventos/",
         status_code=303
     )

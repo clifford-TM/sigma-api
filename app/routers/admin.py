@@ -5,7 +5,7 @@ from fastapi.templating import Jinja2Templates
 from app.deps import get_current_user
 from app.models import Usuario
 
-router = APIRouter(tags=["admin"])
+router = APIRouter(prefix="/admin", tags=["admin"])
 templates = Jinja2Templates(directory="public")
 
 
@@ -14,7 +14,7 @@ def home():
     return RedirectResponse(url="/login", status_code=303)
 
 
-@router.get("/admin")
+@router.get("/dashboard")
 def admin_dashboard(
     request: Request,
     current_user: Usuario = Depends(get_current_user),

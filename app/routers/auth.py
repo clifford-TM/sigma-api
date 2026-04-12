@@ -21,7 +21,7 @@ def destino_por_tipo(user_tipo: str) -> str:
     elif user_tipo == "tecnico":
         return "/tecnico/dashboard"
     elif user_tipo == "admin":
-        return "/admin"
+        return "/admin/dashboard"
     return "/login"
 
 
