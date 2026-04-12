@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import Integer, String, Enum, Boolean, DateTime, ForeignKey, Text
+from sqlalchemy import Integer, String, Enum, Boolean, DateTime, ForeignKey, Text, Column
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db import Base
@@ -155,3 +155,22 @@ class Ocorrencia(Base):
     )
     resolvida: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     resolvida_em: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+class ComandoDispositivo(Base):
+    __tablename__ = "comandos_dispositivo"
+
+    id_comando = Column(Integer, primary_key=True, index=True)
+    device_id = Column(String(100), nullable=False, index=True)
+    acao = Column(String(50), nullable=False)
+    payload_json = Column(Text, nullable=True)
+
+    status = Column(
+        Enum("pendente", "consumido", "cancelado", name="status_comando_dispositivo"),
+        nullable=False,
+        default="pendente",
+        server_default="pendente",
+        index=True,
+    )
+
+    criado_em = Column(DateTime, nullable=False, server_default=func.now())
+    consumido_em = Column(DateTime, nullable=True)

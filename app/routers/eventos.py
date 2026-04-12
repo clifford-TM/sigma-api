@@ -1,6 +1,7 @@
 from datetime import datetime
 import re
 import requests
+import json
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel
@@ -8,10 +9,12 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import get_current_user
-from app.models import Evento, Dispositivo, RFIDTag, Usuario, Presenca
+from app.models import Evento, Dispositivo, RFIDTag, Usuario, Presenca, ComandoDispositivo
 from app.schemas import TagAuthRequest, ParticipantePayload, CadernoFinalPayload
 router = APIRouter(prefix="/eventos", tags=["eventos"])
 
+class ConfirmarComandoPayload(BaseModel):
+    comando_id: int
 
 # helpers
 def normalizar_uid(uid: str) -> str:
@@ -59,7 +62,15 @@ def disparar_inicio_evento(
     if not evento:
         raise HTTPException(status_code=404, detail="Evento não encontrado.")
 
-    dispositivo = obter_dispositivo_da_sala(db, evento.sala_id)
+    dispositivo = (
+        db.query(Dispositivo)
+        .filter(
+            Dispositivo.sala_id == evento.sala_id,
+            Dispositivo.ativo == True
+        )
+        .first()
+    )
+
     if not dispositivo:
         raise HTTPException(status_code=404, detail="Dispositivo da sala não encontrado.")
 
@@ -71,26 +82,20 @@ def disparar_inicio_evento(
         "host_nome": current_user.nome,
     }
 
-    url_esp = montar_url_esp(dispositivo, "/evento/iniciar")
+    comando = ComandoDispositivo(
+        device_id=dispositivo.identificador_fisico,
+        acao="iniciar_evento",
+        payload_json=json.dumps(payload),
+        status="pendente"
+    )
 
-    try:
-        resp = requests.post(url_esp, json=payload, timeout=5)
-        resp.raise_for_status()
-    except requests.RequestException as e:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Falha ao comunicar com o ESP: {e}"
-        )
+    db.add(comando)
+    db.commit()
 
-    return {
-        "ok": True,
-        "mensagem": "Comando de início enviado ao ESP.",
-        "esp_url": url_esp,
-        "esp_resposta": resp.json() if resp.content else {}
-    }
+    return {"ok": True, "mensagem": "Comando registrado para o dispositivo."}
 
 
-@router.post("/{evento_id}/disparar-encerramento")
+@router.post("/{evento_id}/disparar-inicio")
 def disparar_encerramento_evento(
     evento_id: int,
     db: Session = Depends(get_db),
@@ -100,27 +105,37 @@ def disparar_encerramento_evento(
     if not evento:
         raise HTTPException(status_code=404, detail="Evento não encontrado.")
 
-    dispositivo = obter_dispositivo_da_sala(db, evento.sala_id)
+    dispositivo = (
+        db.query(Dispositivo)
+        .filter(
+            Dispositivo.sala_id == evento.sala_id,
+            Dispositivo.ativo == True
+        )
+        .first()
+    )
+
     if not dispositivo:
         raise HTTPException(status_code=404, detail="Dispositivo da sala não encontrado.")
 
-    url_esp = montar_url_esp(dispositivo, "/evento/encerrar")
-
-    try:
-        resp = requests.post(url_esp, json={"evento_id": evento.id_evento}, timeout=5)
-        resp.raise_for_status()
-    except requests.RequestException as e:
-        raise HTTPException(
-            status_code=502,
-            detail=f"Falha ao comunicar com o ESP: {e}"
-        )
-
-    return {
-        "ok": True,
-        "mensagem": "Comando de encerramento enviado ao ESP.",
-        "esp_url": url_esp,
-        "esp_resposta": resp.json() if resp.content else {}
+    payload = {
+        "evento_id": evento.id_evento,
+        "sala_id": evento.sala_id,
+        "host_id": evento.host,
+        "tipo": evento.tipo,
+        "host_nome": current_user.nome,
     }
+
+    comando = ComandoDispositivo(
+        device_id=dispositivo.identificador_fisico,
+        acao="encerrar_evento",
+        payload_json=json.dumps(payload),
+        status="pendente"
+    )
+
+    db.add(comando)
+    db.commit()
+
+    return {"ok": True, "mensagem": "Comando registrado para o dispositivo."}
 
 
 # =========================
@@ -267,3 +282,51 @@ def receber_caderno_final(
         "evento_id": payload.evento_id,
         "presencas_inseridas": inseridas,
     }
+
+@router.get("/dispositivos/{device_id}/comando-pendente")
+def obter_comando_pendente(device_id: str, db: Session = Depends(get_db)):
+    comando = (
+        db.query(ComandoDispositivo)
+        .filter(
+            ComandoDispositivo.device_id == device_id,
+            ComandoDispositivo.status == "pendente"
+        )
+        .order_by(ComandoDispositivo.criado_em.asc())
+        .first()
+    )
+
+    if not comando:
+        return {"acao": "nenhuma"}
+
+    payload = json.loads(comando.payload_json) if comando.payload_json else {}
+
+    return {
+        "acao": comando.acao,
+        "comando_id": comando.id_comando,
+        "payload": payload
+    }
+
+@router.post("/dispositivos/{device_id}/confirmar-comando")
+def confirmar_comando(
+    device_id: str,
+    payload: ConfirmarComandoPayload,
+    db: Session = Depends(get_db),
+):
+    comando = (
+        db.query(ComandoDispositivo)
+        .filter(
+            ComandoDispositivo.id_comando == payload.comando_id,
+            ComandoDispositivo.device_id == device_id,
+            ComandoDispositivo.status == "pendente"
+        )
+        .first()
+    )
+
+    if not comando:
+        raise HTTPException(status_code=404, detail="Comando não encontrado.")
+
+    comando.status = "consumido"
+    comando.consumido_em = datetime.now()
+    db.commit()
+
+    return {"ok": True}
