@@ -14,7 +14,7 @@
       <p style="color: red;">{{ erro }}</p>
     {% endif %}
 
-    <form method="post" action="/professor/eventos/{{ evento.id_evento }}/cancelar">
+    <form method="post" action="/eventos/{{ evento.id_evento }}/cancelar">
       <div>
         <label for="motivo">Justificativa</label><br />
         <textarea
@@ -29,7 +29,7 @@
       <br />
 
       <button type="submit">Confirmar cancelamento</button>
-      <a href="/professor/eventos">Voltar</a>
+      <a href="/eventos">Voltar</a>
     </form>
   </body>
 </html>

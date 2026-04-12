@@ -12,7 +12,7 @@
 
     <nav>
       <a href="/professor/dashboard">Dashboard</a>
-      <a href="/professor/eventos/novo">Novo evento</a>
+      <a href="/eventos/novo">Novo evento</a>
       <a href="/logout">Sair</a>
     </nav>
 
@@ -65,7 +65,7 @@
                 <td>
                   {% if evento.status == "agendado" %}
                       <form
-                          action="/professor/eventos/{{ evento.id_evento }}/iniciar"
+                          action="/eventos/{{ evento.id_evento }}/iniciar"
                           method="post"
                           style="display:inline;"
                       >
@@ -74,18 +74,18 @@
 
                       |
 
-                      <a href="/professor/eventos/{{ evento.id_evento }}/editar">Editar</a>
+                      <a href="/eventos/{{ evento.id_evento }}/editar">Editar</a>
 
                       |
 
-                      <a href="/professor/eventos/{{ evento.id_evento }}/cancelar">Cancelar</a>
+                      <a href="/eventos/{{ evento.id_evento }}/cancelar">Cancelar</a>
 
                   {% elif evento.status == "pendente" %}
                       Aguardando confirmação no dispositivo...
 
                       |
 
-                      <a href="/professor/eventos/{{ evento.id_evento }}/cancelar">Cancelar</a>
+                      <a href="/eventos/{{ evento.id_evento }}/cancelar">Cancelar</a>
 
                   {% elif evento.status == "ativo" %}
                       Evento em andamento

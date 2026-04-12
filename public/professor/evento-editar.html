@@ -15,7 +15,7 @@
       <p style="color: red;">{{ erro }}</p>
     {% endif %}
 
-    <form action="/professor/eventos/{{ evento.id_evento }}/editar" method="post">
+    <form action="/eventos/{{ evento.id_evento }}/editar" method="post">
       <div>
         <label for="sala_id">Sala</label>
         <select id="sala_id" name="sala_id" required>
@@ -64,7 +64,7 @@
     </form>
 
     <p>
-      <a href="/professor/eventos">Voltar para meus eventos</a>
+      <a href="/eventos">Voltar para meus eventos</a>
     </p>
   </body>
 </html>
