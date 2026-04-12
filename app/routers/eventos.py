@@ -89,6 +89,7 @@ def disparar_inicio_evento(
         status="pendente"
     )
 
+    evento.status = "pendente"
     db.add(comando)
     db.commit()
 
@@ -132,6 +133,7 @@ def disparar_encerramento_evento(
         status="pendente"
     )
 
+    evento.status = "encerrando"
     db.add(comando)
     db.commit()
 
@@ -145,9 +147,10 @@ def disparar_encerramento_evento(
 @router.post("/{evento_id}/autorizar-inicio")
 def autorizar_inicio(
     evento_id: int,
-    uid: str,
+    payload: TagAuthRequest,
     db: Session = Depends(get_db)
 ):
+    uid = normalizar_uid(payload.uid)
     tag = (
         db.query(RFIDTag)
         .filter(
@@ -227,7 +230,6 @@ def autorizar_fim_evento(
         "evento_id": evento.id_evento,
     }
 
-
 @router.post("/caderno-final")
 def receber_caderno_final(
     payload: CadernoFinalPayload,
@@ -293,24 +295,22 @@ def obter_comando_pendente(device_id: str, db: Session = Depends(get_db)):
     if not comando:
         return {"acao": None}
 
-    payload = json.loads(comando.payload_json) if comando.payload_json else {}
-
     return {
         "comando_id": comando.id_comando,
         "acao": comando.acao,
-        "payload": payload
+        "payload": json.loads(comando.payload_json or "{}")
     }
 
 @router.post("/dispositivos/{device_id}/confirmar-comando")
 def confirmar_comando(
     device_id: str,
-    comando_id: int,
+    body: dict,
     db: Session = Depends(get_db)
 ):
     comando = (
         db.query(ComandoDispositivo)
         .filter(
-            ComandoDispositivo.id_comando == comando_id,
+            ComandoDispositivo.id_comando == body["comando_id"],
             ComandoDispositivo.device_id == device_id
         )
         .first()
