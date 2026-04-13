@@ -48,6 +48,7 @@ class Evento(Base):
     sala_id: Mapped[int] = mapped_column(ForeignKey("salas.id_sala"), nullable=False)
     status: Mapped[str] = mapped_column(
         Enum(
+            "pendente_aprovacao",
             "agendado",
             "pendente",
             "ativo",

@@ -25,6 +25,16 @@ def destino_por_tipo(user_tipo: str) -> str:
     return "/login"
 
 
+@router.get("/")
+def home(request: Request):
+    if request.session.get("user_id"):
+        return RedirectResponse(
+            url=destino_por_tipo(request.session.get("user_tipo")),
+            status_code=303
+        )
+
+    return RedirectResponse(url="/login", status_code=303)
+
 @router.get("/login")
 def login_page(request: Request):
     if request.session.get("user_id"):
