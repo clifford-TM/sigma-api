@@ -53,7 +53,7 @@ def dashboard_professor(
         .filter(
             Evento.tipo == "projeto",
             Evento.autorizado_por == current_user.id_usuario,
-            Evento.status == "pendente",
+            Evento.status == "pendente_aprovacao",
         )
         .order_by(Evento.inicio_previsto.asc())
         .limit(5)
@@ -95,7 +95,7 @@ def aprovar_projeto(
             Evento.id_evento == evento_id,
             Evento.tipo == "projeto",
             Evento.autorizado_por == current_user.id_usuario,
-            Evento.status == "pendente",
+            Evento.status == "pendente_aprovacao",
         )
         .first()
     )
@@ -131,7 +131,7 @@ def formulario_reprovar_projeto(
             Evento.id_evento == evento_id,
             Evento.tipo == "projeto",
             Evento.autorizado_por == current_user.id_usuario,
-            Evento.status == "pendente",
+            Evento.status == "pendente_aprovacao",
         )
         .first()
     )
@@ -170,7 +170,7 @@ def reprovar_projeto(
             Evento.id_evento == evento_id,
             Evento.tipo == "projeto",
             Evento.autorizado_por == current_user.id_usuario,
-            Evento.status == "pendente",
+            Evento.status == "pendente_aprovacao",
         )
         .first()
     )

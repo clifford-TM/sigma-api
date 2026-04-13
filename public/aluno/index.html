@@ -10,8 +10,8 @@
     <p>Bem-vindo, {{ usuario.nome }}</p>
 
     <nav>
-      <a href="/aluno/projetos">Meus projetos</a>
-      <a href="/aluno/projetos/novo">Solicitar projeto</a>
+      <a href="/eventos">Meus projetos</a>
+      <a href="/eventos/novo">Solicitar projeto</a>
       <a href="/logout">Sair</a>
     </nav>
 
@@ -38,6 +38,12 @@
                 Não definido
               {% endif %}
               — Status: {{ projeto.status }}
+
+              {% if projeto.status == "agendado" %}
+                <form action="/eventos/{{ projeto.id_evento }}/iniciar" method="post" style="display:inline;">
+                  <button type="submit">Iniciar projeto</button>
+                </form>
+              {% endif %}
             </li>
           {% endfor %}
         </ul>

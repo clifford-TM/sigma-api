@@ -2,13 +2,38 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <title>Cancelar evento</title>
+    <title>
+      {% if usuario.tipo == "aluno" %}
+        Cancelar projeto
+      {% else %}
+        Cancelar evento
+      {% endif %}
+    </title>
   </head>
   <body>
-    <h1>Cancelar evento</h1>
+    <h1>
+      {% if usuario.tipo == "aluno" %}
+        Cancelar projeto
+      {% else %}
+        Cancelar evento
+      {% endif %}
+    </h1>
 
-    <p>Evento #{{ evento.id_evento }}</p>
-    <p>{{ evento.tipo }} - {{ evento.descricao }}</p>
+    <p>
+      {% if usuario.tipo == "aluno" %}
+        Projeto
+      {% else %}
+        Evento
+      {% endif %}
+      #{{ evento.id_evento }}
+    </p>
+
+    <p>
+      {{ evento.tipo }}
+      {% if evento.descricao %}
+        - {{ evento.descricao }}
+      {% endif %}
+    </p>
 
     {% if erro %}
       <p style="color: red;">{{ erro }}</p>

@@ -10,7 +10,15 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import get_current_user
-from app.models import Evento, Dispositivo, RFIDTag, Usuario, Presenca, ComandoDispositivo, Sala
+from app.models import (
+    Evento,
+    Dispositivo,
+    RFIDTag,
+    Usuario,
+    Presenca,
+    ComandoDispositivo,
+    Sala,
+)
 from app.schemas import TagAuthRequest, CadernoFinalPayload
 
 router = APIRouter(prefix="/eventos", tags=["eventos"])
@@ -37,21 +45,9 @@ def obter_dispositivo_da_sala(db: Session, sala_id: int) -> Dispositivo | None:
 
 
 def rota_lista_por_tipo(user_tipo: str) -> str:
-    return "/eventos"
-
-
-def pasta_template_por_tipo(user_tipo: str) -> str:
-    if user_tipo == "professor":
-        return "professor"
-    if user_tipo == "aluno":
-        return "aluno"
-    if user_tipo == "seguranca":
-        return "seguranca"
-    if user_tipo == "tecnico":
-        return "tecnico"
-    if user_tipo == "admin":
-        return "admin"
-    return "auth"
+    if user_tipo in ["professor", "aluno", "seguranca", "tecnico", "admin"]:
+        return "/eventos"
+    return "/login"
 
 
 def tipos_permitidos_para_usuario(user_tipo: str) -> list[str]:
@@ -68,32 +64,20 @@ def tipos_permitidos_para_usuario(user_tipo: str) -> list[str]:
     return []
 
 
-def template_lista_eventos(user_tipo: str) -> str:
-    pasta = pasta_template_por_tipo(user_tipo)
-    if user_tipo == "aluno":
-        return f"{pasta}/projetos-lista.html"
-    return f"{pasta}/eventos-lista.html"
+def template_lista_eventos() -> str:
+    return "eventos/eventos-lista.html"
 
 
-def template_form_evento(user_tipo: str) -> str:
-    pasta = pasta_template_por_tipo(user_tipo)
-    if user_tipo == "aluno":
-        return f"{pasta}/projeto-form.html"
-    return f"{pasta}/evento-form.html"
+def template_form_evento() -> str:
+    return "eventos/evento-form.html"
 
 
-def template_editar_evento(user_tipo: str) -> str:
-    pasta = pasta_template_por_tipo(user_tipo)
-    if user_tipo == "aluno":
-        return f"{pasta}/projeto-editar.html"
-    return f"{pasta}/evento-editar.html"
+def template_editar_evento() -> str:
+    return "eventos/evento-editar.html"
 
 
-def template_cancelar_evento(user_tipo: str) -> str:
-    pasta = pasta_template_por_tipo(user_tipo)
-    if user_tipo == "aluno":
-        return f"{pasta}/projeto-cancelar.html"
-    return f"{pasta}/evento-cancelar.html"
+def template_cancelar_evento() -> str:
+    return "eventos/evento-cancelar.html"
 
 
 @router.get("")
@@ -110,15 +94,20 @@ def listar_eventos_usuario(
     )
 
     salas = {sala.id_sala: sala for sala in db.query(Sala).all()}
+    professores = {
+        professor.id_usuario: professor
+        for professor in db.query(Usuario).filter(Usuario.tipo == "professor").all()
+    }
 
     return templates.TemplateResponse(
         request=request,
-        name=template_lista_eventos(current_user.tipo),
+        name=template_lista_eventos(),
         context={
             "usuario": current_user,
             "eventos": eventos,
             "projetos": eventos,
             "salas": salas,
+            "professores": professores,
         },
     )
 
@@ -149,7 +138,7 @@ def formulario_novo_evento(
 
     return templates.TemplateResponse(
         request=request,
-        name=template_form_evento(current_user.tipo),
+        name=template_form_evento(),
         context=context,
     )
 
@@ -199,7 +188,7 @@ def criar_evento(
         context["erro"] = "Tipo de evento inválido para este usuário."
         return templates.TemplateResponse(
             request=request,
-            name=template_form_evento(current_user.tipo),
+            name=template_form_evento(),
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -209,7 +198,7 @@ def criar_evento(
         context["erro"] = "A sala selecionada não existe."
         return templates.TemplateResponse(
             request=request,
-            name=template_form_evento(current_user.tipo),
+            name=template_form_evento(),
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -227,7 +216,7 @@ def criar_evento(
             context["erro"] = "O professor autorizador é inválido."
             return templates.TemplateResponse(
                 request=request,
-                name=template_form_evento(current_user.tipo),
+                name=template_form_evento(),
                 context=context,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
@@ -239,7 +228,7 @@ def criar_evento(
         context["erro"] = "Data ou horário inválido."
         return templates.TemplateResponse(
             request=request,
-            name=template_form_evento(current_user.tipo),
+            name=template_form_evento(),
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -248,7 +237,7 @@ def criar_evento(
         context["erro"] = "O horário de término deve ser posterior ao horário de início."
         return templates.TemplateResponse(
             request=request,
-            name=template_form_evento(current_user.tipo),
+            name=template_form_evento(),
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -257,7 +246,7 @@ def criar_evento(
         db.query(Evento)
         .filter(
             Evento.sala_id == sala_id,
-            Evento.status.in_(["agendado", "ativo", "pendente"]),
+            Evento.status.in_(["pendente_aprovacao", "agendado", "ativo", "pendente"]),
             Evento.inicio_previsto < fim_dt,
             Evento.fim_previsto > inicio_dt,
         )
@@ -268,12 +257,12 @@ def criar_evento(
         context["erro"] = "Já existe um evento agendado nessa sala para esse horário."
         return templates.TemplateResponse(
             request=request,
-            name=template_form_evento(current_user.tipo),
+            name=template_form_evento(),
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    status_inicial = "pendente" if tipo == "projeto" else "agendado"
+    status_inicial = "pendente_aprovacao" if tipo == "projeto" else "agendado"
 
     novo_evento = Evento(
         tipo=tipo,
@@ -315,7 +304,7 @@ def formulario_editar_evento(
         .first()
     )
 
-    if not evento or evento.status not in ["agendado", "pendente"]:
+    if not evento or evento.status not in ["agendado", "pendente_aprovacao"]:
         return RedirectResponse(
             url=rota_lista_por_tipo(current_user.tipo),
             status_code=status.HTTP_303_SEE_OTHER,
@@ -350,7 +339,7 @@ def formulario_editar_evento(
 
     return templates.TemplateResponse(
         request=request,
-        name=template_editar_evento(current_user.tipo),
+        name=template_editar_evento(),
         context=context,
     )
 
@@ -376,7 +365,7 @@ def atualizar_evento(
         .first()
     )
 
-    if not evento or evento.status not in ["agendado", "pendente"]:
+    if not evento or evento.status not in ["agendado", "pendente_aprovacao"]:
         return RedirectResponse(
             url=rota_lista_por_tipo(current_user.tipo),
             status_code=status.HTTP_303_SEE_OTHER,
@@ -415,7 +404,7 @@ def atualizar_evento(
         context["erro"] = "A sala selecionada não existe."
         return templates.TemplateResponse(
             request=request,
-            name=template_editar_evento(current_user.tipo),
+            name=template_editar_evento(),
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -427,7 +416,7 @@ def atualizar_evento(
         context["erro"] = "Data ou horário inválido."
         return templates.TemplateResponse(
             request=request,
-            name=template_editar_evento(current_user.tipo),
+            name=template_editar_evento(),
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -436,7 +425,7 @@ def atualizar_evento(
         context["erro"] = "O horário de término deve ser posterior ao horário de início."
         return templates.TemplateResponse(
             request=request,
-            name=template_editar_evento(current_user.tipo),
+            name=template_editar_evento(),
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -446,7 +435,7 @@ def atualizar_evento(
         .filter(
             Evento.id_evento != evento.id_evento,
             Evento.sala_id == sala_id,
-            Evento.status.in_(["agendado", "ativo", "pendente"]),
+            Evento.status.in_(["pendente_aprovacao", "agendado", "ativo", "pendente"]),
             Evento.inicio_previsto < fim_dt,
             Evento.fim_previsto > inicio_dt,
         )
@@ -457,7 +446,7 @@ def atualizar_evento(
         context["erro"] = "Já existe um evento agendado nessa sala para esse horário."
         return templates.TemplateResponse(
             request=request,
-            name=template_editar_evento(current_user.tipo),
+            name=template_editar_evento(),
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -494,7 +483,7 @@ def formulario_cancelar_evento(
         .first()
     )
 
-    if not evento or evento.status not in ["agendado", "pendente"]:
+    if not evento or evento.status not in ["agendado", "pendente_aprovacao"]:
         return RedirectResponse(
             url=rota_lista_por_tipo(current_user.tipo),
             status_code=status.HTTP_303_SEE_OTHER,
@@ -502,7 +491,7 @@ def formulario_cancelar_evento(
 
     return templates.TemplateResponse(
         request=request,
-        name=template_cancelar_evento(current_user.tipo),
+        name=template_cancelar_evento(),
         context={
             "usuario": current_user,
             "evento": evento,
@@ -528,7 +517,7 @@ def cancelar_evento(
         .first()
     )
 
-    if not evento or evento.status not in ["agendado", "pendente"]:
+    if not evento or evento.status not in ["agendado", "pendente_aprovacao"]:
         return RedirectResponse(
             url=rota_lista_por_tipo(current_user.tipo),
             status_code=status.HTTP_303_SEE_OTHER,
@@ -539,7 +528,7 @@ def cancelar_evento(
     if not motivo:
         return templates.TemplateResponse(
             request=request,
-            name=template_cancelar_evento(current_user.tipo),
+            name=template_cancelar_evento(),
             context={
                 "usuario": current_user,
                 "evento": evento,
@@ -548,7 +537,6 @@ def cancelar_evento(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    
     evento.status = "cancelado"
     evento.motivo_nao_realizacao = motivo
 
@@ -558,12 +546,11 @@ def cancelar_evento(
             ComandoDispositivo.status == "pendente",
             ComandoDispositivo.payload_json.contains(
                 f'"evento_id":{evento.id_evento}'
-            )
+            ),
         )
         .all()
     )
 
-    # fallback caso o JSON tenha espaço após os :
     if not comandos_pendentes:
         comandos_pendentes = (
             db.query(ComandoDispositivo)
@@ -571,7 +558,7 @@ def cancelar_evento(
                 ComandoDispositivo.status == "pendente",
                 ComandoDispositivo.payload_json.contains(
                     f'"evento_id": {evento.id_evento}'
-                )
+                ),
             )
             .all()
         )
@@ -581,6 +568,12 @@ def cancelar_evento(
         comando.consumido_em = datetime.utcnow()
 
     db.commit()
+
+    return RedirectResponse(
+        url=rota_lista_por_tipo(current_user.tipo),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
 
 @router.post("/{evento_id}/iniciar")
 def iniciar_evento(
