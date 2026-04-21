@@ -1,0 +1,69 @@
+<!-- public/turmas/turma-form.html -->
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        {% if turma %}
+            Editar turma
+        {% else %}
+            Nova turma
+        {% endif %}
+    </title>
+</head>
+<body>
+    <h1>
+        {% if turma %}
+            Editar turma
+        {% else %}
+            Nova turma
+        {% endif %}
+    </h1>
+
+    {% if erro %}
+        <p style="color:red;">{{ erro }}</p>
+    {% endif %}
+
+    <form method="post"
+          action="{% if turma %}/turmas/{{ turma.id_turma }}/editar{% else %}/turmas/nova{% endif %}">
+
+        <label for="ano">Ano:</label><br>
+        <input
+            type="number"
+            id="ano"
+            name="ano"
+            min="2000"
+            max="2100"
+            value="{{ turma.ano if turma else '' }}"
+            required
+        ><br><br>
+
+        <label for="curso_id">Curso:</label><br>
+        <select id="curso_id" name="curso_id" required>
+            <option value="">Selecione</option>
+            {% for curso in cursos %}
+                <option value="{{ curso.id_curso }}"
+                    {% if turma and turma.curso_id == curso.id_curso %}selected{% endif %}>
+                    {{ curso.nome }}
+                </option>
+            {% endfor %}
+        </select><br><br>
+
+        <label for="semestre">Semestre:</label><br>
+        <input
+            type="number"
+            id="semestre"
+            name="semestre"
+            min="1"
+            max="12"
+            value="{{ turma.semestre if turma else '' }}"
+            required
+        ><br><br>
+
+        <button type="submit">Salvar</button>
+    </form>
+
+    <p><a href="/turmas/">Voltar</a></p>
+</body>
+</html>

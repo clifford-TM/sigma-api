@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Matérias - SIGMA</title>
+</head>
+<body>
+    <h1>Matérias</h1>
+
+    <p>Logado como {{ usuario.nome }} ({{ usuario.tipo }})</p>
+
+    <p>
+        <a href="/admin/dashboard">Dashboard</a>
+        <a href="/materias/nova">Nova matéria</a>
+    </p>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Curso</th>
+                <th>Semestre</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for materia in materias %}
+            <tr>
+                <td>{{ materia.id_materia }}</td>
+                <td>{{ materia.nome }}</td>
+                <td>{{ mapa_cursos.get(materia.curso_id, "—") }}</td>
+                <td>{{ materia.semestre }}</td>
+                <td>
+                    <a href="/materias/{{ materia.id_materia }}/editar">Editar</a>
+
+                    <form method="post"
+                          action="/materias/{{ materia.id_materia }}/excluir"
+                          style="display:inline;">
+                        <button type="submit">Excluir</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

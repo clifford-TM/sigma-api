@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Cursos - SIGMA</title>
+</head>
+<body>
+    <h1>Cursos</h1>
+
+    <p>Logado como {{ usuario.nome }} ({{ usuario.tipo }})</p>
+
+    <p>
+        <a href="/admin/dashboard">Dashboard</a>
+        <a href="/cursos/novo">Novo curso</a>
+    </p>
+
+    <table border="1">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for curso in cursos %}
+            <tr>
+                <td>{{ curso.id_curso }}</td>
+                <td>{{ curso.nome }}</td>
+                <td>
+                    <a href="/cursos/{{ curso.id_curso }}/editar">Editar</a>
+
+                    <form method="post"
+                          action="/cursos/{{ curso.id_curso }}/excluir"
+                          style="display:inline;">
+                        <button type="submit">Excluir</button>
+                    </form>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</body>
+</html>

@@ -18,6 +18,52 @@ class Usuario(Base):
     email: Mapped[str] = mapped_column(String(191), unique=True, nullable=False)
     senha: Mapped[str] = mapped_column(String(60), nullable=False)
 
+class Turma(Base):
+    __tablename__ = "turmas"
+
+    id_turma: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    ano: Mapped[int] = mapped_column(Integer, nullable=False)
+    curso_id: Mapped[int] = mapped_column(ForeignKey("cursos.id_curso"), nullable=False)
+    semestre: Mapped[int] = mapped_column(Integer, nullable=False)
+
+class Materia(Base):
+    __tablename__ = "materias"
+
+    id_materia: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nome: Mapped[str] = mapped_column(String(120), nullable=False)
+    curso_id: Mapped[int] = mapped_column(ForeignKey("cursos.id_curso"), nullable=False)
+    semestre: Mapped[int] = mapped_column(Integer, nullable=False)
+
+class Aluno(Base):
+    __tablename__ = "alunos"
+
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id_usuario"), primary_key=True)
+    turma_id: Mapped[int] = mapped_column(ForeignKey("turmas.id_turma"), nullable=False)
+
+class Professor(Base):
+    __tablename__ = "professores"
+
+    id_professor: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id_usuario"), nullable=False, unique=True)
+
+class ProfessorMateria(Base):
+    __tablename__ = "professor_materia"
+
+    professor_id: Mapped[int] = mapped_column(ForeignKey("professores.id_professor"), primary_key=True)
+    materia_id: Mapped[int] = mapped_column(ForeignKey("materias.id_materia"), primary_key=True)
+
+class TurmaMateria(Base):
+    __tablename__ = "turma_materias"
+
+    turma_id: Mapped[int] = mapped_column(ForeignKey("turmas.id_turma"), primary_key=True)
+    materia_id: Mapped[int] = mapped_column(ForeignKey("materias.id_materia"), primary_key=True)
+
+class Curso(Base):
+    __tablename__ = "cursos"
+
+    id_curso: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nome: Mapped[str] = mapped_column(String(80), nullable=False, unique=True)
+
 class RFIDTag(Base):
     __tablename__ = "rfid_tags"
 

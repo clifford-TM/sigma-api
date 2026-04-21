@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>
+        {% if curso %}
+            Editar curso
+        {% else %}
+            Novo curso
+        {% endif %}
+    </title>
+</head>
+<body>
+    <h1>
+        {% if curso %}
+            Editar curso
+        {% else %}
+            Novo curso
+        {% endif %}
+    </h1>
+
+    {% if erro %}
+        <p style="color:red;">{{ erro }}</p>
+    {% endif %}
+
+    <form method="post"
+          action="{% if curso %}/cursos/{{ curso.id_curso }}/editar{% else %}/cursos/novo{% endif %}">
+        <label for="nome">Nome:</label><br>
+        <input
+            type="text"
+            id="nome"
+            name="nome"
+            value="{{ curso.nome if curso else '' }}"
+            required
+        ><br><br>
+
+        <button type="submit">Salvar</button>
+    </form>
+
+    <p><a href="/cursos/">Voltar</a></p>
+</body>
+</html>
