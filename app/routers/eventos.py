@@ -45,7 +45,7 @@ def obter_dispositivo_da_sala(db: Session, sala_id: int) -> Dispositivo | None:
 
 
 def rota_lista_por_tipo(user_tipo: str) -> str:
-    if user_tipo in ["professor", "aluno", "seguranca", "tecnico", "admin"]:
+    if user_tipo in ["professor", "aluno", "seguranca", "zelador", "tecnico", "admin"]:
         return "/eventos"
     return "/login"
 
@@ -59,6 +59,8 @@ def tipos_permitidos_para_usuario(user_tipo: str) -> list[str]:
         return ["inspecao"]
     if user_tipo == "tecnico":
         return ["manutencao"]
+    if user_tipo == "zelador":
+        return ["limpeza"]
     if user_tipo == "admin":
         return ["aula", "projeto", "inspecao", "manutencao", "limpeza"]
     return []
@@ -119,12 +121,14 @@ def formulario_novo_evento(
     current_user: Usuario = Depends(get_current_user),
 ):
     salas = db.query(Sala).order_by(Sala.numero.asc()).all()
+    tipos_permitidos = tipos_permitidos_para_usuario(current_user.tipo)
 
     context = {
         "usuario": current_user,
         "erro": None,
         "valores": {},
         "salas": salas,
+        "tipos_permitidos": tipos_permitidos,
     }
 
     if current_user.tipo == "aluno":
@@ -184,6 +188,14 @@ def criar_evento(
         context["professores"] = professores
 
     tipos_permitidos = tipos_permitidos_para_usuario(current_user.tipo)
+
+    context = {
+        "usuario": current_user,
+        "erro": None,
+        "valores": valores,
+        "salas": salas,
+        "tipos_permitidos": tipos_permitidos,
+    }
     if tipo not in tipos_permitidos:
         context["erro"] = "Tipo de evento inválido para este usuário."
         return templates.TemplateResponse(

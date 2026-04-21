@@ -12,16 +12,9 @@ templates = Jinja2Templates(directory="public")
 
 
 def destino_por_tipo(user_tipo: str) -> str:
-    if user_tipo == "professor":
-        return "/professor/dashboard"
-    elif user_tipo == "aluno":
-        return "/aluno/dashboard"
-    elif user_tipo == "seguranca":
-        return "/seguranca/dashboard"
-    elif user_tipo == "tecnico":
-        return "/tecnico/dashboard"
-    elif user_tipo == "admin":
-        return "/admin/dashboard"
+    tipos_validos = ["professor", "aluno", "seguranca", "tecnico", "zelador", "admin"]
+    if user_tipo in tipos_validos:
+        return f"/{user_tipo}/dashboard"
     return "/login"
 
 

@@ -12,7 +12,7 @@ class Usuario(Base):
     id_usuario: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     nome: Mapped[str] = mapped_column(String(120), nullable=False)
     tipo: Mapped[str] = mapped_column(
-        Enum("aluno", "professor", "seguranca", "tecnico", "admin", name="usuarios_tipo"),
+        Enum("aluno", "professor", "seguranca", "zelador", "tecnico", "admin", name="usuarios_tipo"),
         nullable=False,
     )
     email: Mapped[str] = mapped_column(String(191), unique=True, nullable=False)
@@ -75,7 +75,7 @@ class EventoParticipante(Base):
     evento_id: Mapped[int] = mapped_column(ForeignKey("eventos.id_evento"), primary_key=True)
     usuario_id: Mapped[int] = mapped_column(ForeignKey("usuarios.id_usuario"), primary_key=True)
     papel: Mapped[str] = mapped_column(
-        Enum("professor", "aluno", "seguranca", "tecnico", name="evento_participantes_papel"),
+        Enum("professor", "aluno", "seguranca", "zelador", "tecnico", name="evento_participantes_papel"),
         nullable=False,
     )
 

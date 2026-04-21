@@ -13,7 +13,7 @@ import re
 router = APIRouter(prefix="/usuarios", tags=["usuarios"])
 templates = Jinja2Templates(directory="public")
 
-TIPOS_VALIDOS = {"aluno", "professor", "seguranca", "tecnico", "admin"}
+TIPOS_VALIDOS = {"aluno", "professor", "seguranca", "zelador", "tecnico", "admin"}
 
 
 @router.get("/")

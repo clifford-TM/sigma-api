@@ -56,7 +56,7 @@
             </option>
           {% endif %}
 
-          {% if usuario.tipo == "admin" %}
+          {% if usuario.tipo == "zelador" or usuario.tipo == "admin" %}
             <option value="limpeza" {% if valores and valores.tipo == 'limpeza' %}selected{% endif %}>
               Limpeza
             </option>
