@@ -1,5 +1,3 @@
-<!-- public/turmas/turma-form.html -->
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -60,6 +58,13 @@
             value="{{ turma.semestre if turma else '' }}"
             required
         ><br><br>
+
+        <label for="periodo">Período:</label><br>
+        <select id="periodo" name="periodo" required>
+            <option value="manha" {% if turma and turma.periodo == "manha" %}selected{% endif %}>Manhã</option>
+            <option value="tarde" {% if turma and turma.periodo == "tarde" %}selected{% endif %}>Tarde</option>
+            <option value="noite" {% if not turma or turma.periodo == "noite" %}selected{% endif %}>Noite</option>
+        </select><br><br>
 
         <button type="submit">Salvar</button>
     </form>

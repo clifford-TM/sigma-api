@@ -18,6 +18,7 @@
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Código</th>
                 <th>Nome</th>
                 <th>Ações</th>
             </tr>
@@ -26,9 +27,12 @@
             {% for curso in cursos %}
             <tr>
                 <td>{{ curso.id_curso }}</td>
+                <td>{{ curso.codigo }}</td>
                 <td>{{ curso.nome }}</td>
                 <td>
-                    <a href="/cursos/{{ curso.id_curso }}/editar">Editar</a>
+                    <a href="/cursos/{{ curso.id_curso }}/editar">Editar</a> |
+                    
+                    <a href="/cursos/{{ curso.id_curso }}/grade">Grade</a>
 
                     <form method="post"
                           action="/cursos/{{ curso.id_curso }}/excluir"

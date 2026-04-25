@@ -25,6 +25,16 @@
 
     <form method="post"
           action="{% if curso %}/cursos/{{ curso.id_curso }}/editar{% else %}/cursos/novo{% endif %}">
+
+        <label for="codigo">Código:</label><br>
+        <input
+            type="text"
+            id="codigo"
+            name="codigo"
+            value="{{ curso.codigo if curso else '' }}"
+            required
+        ><br><br>
+
         <label for="nome">Nome:</label><br>
         <input
             type="text"

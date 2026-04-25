@@ -25,6 +25,11 @@ class Turma(Base):
     ano: Mapped[int] = mapped_column(Integer, nullable=False)
     curso_id: Mapped[int] = mapped_column(ForeignKey("cursos.id_curso"), nullable=False)
     semestre: Mapped[int] = mapped_column(Integer, nullable=False)
+    periodo: Mapped[str] = mapped_column(
+        Enum("manha", "tarde", "noite", name="turmas_periodo"),
+        nullable=False,
+        default="noite",
+    )
 
 class Materia(Base):
     __tablename__ = "materias"
