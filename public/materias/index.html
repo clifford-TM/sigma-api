@@ -18,9 +18,8 @@
         <thead>
             <tr>
                 <th>ID</th>
+                <th>Código</th>
                 <th>Nome</th>
-                <th>Curso</th>
-                <th>Semestre</th>
                 <th>Ações</th>
             </tr>
         </thead>
@@ -28,9 +27,8 @@
             {% for materia in materias %}
             <tr>
                 <td>{{ materia.id_materia }}</td>
+                <td>{{ materia.codigo }}</td>
                 <td>{{ materia.nome }}</td>
-                <td>{{ mapa_cursos.get(materia.curso_id, "—") }}</td>
-                <td>{{ materia.semestre }}</td>
                 <td>
                     <a href="/materias/{{ materia.id_materia }}/editar">Editar</a>
 

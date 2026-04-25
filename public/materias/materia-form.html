@@ -25,27 +25,54 @@
 
     <form method="post"
           action="{% if materia %}/materias/{{ materia.id_materia }}/editar{% else %}/materias/nova{% endif %}">
-        <label>Nome:</label><br>
-        <input type="text" name="nome"
-               value="{{ materia.nome if materia else '' }}"
-               required><br><br>
 
-        <label for="curso_id">Curso:</label><br>
-        <select id="curso_id" name="curso_id" required>
-            <option value="">Selecione</option>
-            {% for curso in cursos %}
-                <option value="{{ curso.id_curso }}"
-                    {% if materia and materia.curso_id == curso.id_curso %}selected{% endif %}>
-                    {{ curso.nome }}
+        <label for="codigo">Código:</label><br>
+        <input
+            type="text"
+            id="codigo"
+            name="codigo"
+            value="{{ materia.codigo if materia else '' }}"
+            required
+        ><br><br>
+
+        <label for="nome">Nome:</label><br>
+        <input
+            type="text"
+            id="nome"
+            name="nome"
+            value="{{ materia.nome if materia else '' }}"
+            required
+        ><br><br>
+
+        <label for="professores_ids">
+            Professores que podem ministrar esta matéria:
+        </label><br>
+
+        <select
+            id="professores_ids"
+            name="professores_ids"
+            multiple
+            size="6"
+            style="min-width: 300px;"
+        >
+            {% for professor, usuario in professores %}
+                <option
+                    value="{{ professor.id_professor }}"
+                    {% if professores_selecionados and professor.id_professor in professores_selecionados %}
+                        selected
+                    {% endif %}
+                >
+                    {{ usuario.nome }}
                 </option>
             {% endfor %}
-        </select><br><br>
+        </select>
 
-        <label>Semestre:</label><br>
-        <input type="number" name="semestre"
-               min="1" max="12"
-               value="{{ materia.semestre if materia else '' }}"
-               required><br><br>
+        <br>
+        <small style="color:#555;">
+            Segure Ctrl (ou Cmd no Mac) para selecionar mais de um professor.
+        </small>
+
+        <br><br>
 
         <button type="submit">Salvar</button>
     </form>

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import get_current_user
-from app.models import RFIDTag, Usuario
+from app.models import RFIDTag, Usuario, Aluno, Professor, Turma, Curso
 from app.security import hash_password
 import re
 
@@ -37,8 +37,17 @@ def listar_usuarios(
 @router.get("/novo")
 def novo_usuario_form(
     request: Request,
+    db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
+    turmas = (
+        db.query(Turma)
+        .order_by(Turma.ano.desc(), Turma.curso_id.asc(), Turma.semestre.asc())
+        .all()
+    )
+    cursos = db.query(Curso).all()
+    mapa_cursos = {c.id_curso: c.nome for c in cursos}
+
     return templates.TemplateResponse(
         request=request,
         name="usuarios/usuario-form.html",
@@ -47,6 +56,8 @@ def novo_usuario_form(
             "erro": None,
             "valores": {},
             "tipos": sorted(TIPOS_VALIDOS),
+            "turmas": turmas,
+            "mapa_cursos": mapa_cursos,
         },
     )
 
@@ -59,6 +70,7 @@ def criar_usuario(
     email: str = Form(...),
     senha: str = Form(...),
     codigo_rfid: str = Form(""),
+    turma_id: int | None = Form(None),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
@@ -66,11 +78,20 @@ def criar_usuario(
     email = email.strip().lower()
     codigo_rfid = codigo_rfid.strip().upper()
 
+    turmas = (
+        db.query(Turma)
+        .order_by(Turma.ano.desc(), Turma.curso_id.asc(), Turma.semestre.asc())
+        .all()
+    )
+    cursos = db.query(Curso).all()
+    mapa_cursos = {c.id_curso: c.nome for c in cursos}
+
     valores = {
         "nome": nome,
         "tipo": tipo,
         "email": email,
         "codigo_rfid": codigo_rfid,
+        "turma_id": turma_id,
     }
 
     HEX_RE = re.compile(r"^[0-9A-F]{8,24}$")
@@ -84,6 +105,8 @@ def criar_usuario(
                 "erro": "O código RFID inválido, verifique a TAG",
                 "valores": valores,
                 "tipos": sorted(TIPOS_VALIDOS),
+                "turmas": turmas,
+                "mapa_cursos": mapa_cursos,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -97,6 +120,8 @@ def criar_usuario(
                 "erro": "O nome é obrigatório.",
                 "valores": valores,
                 "tipos": sorted(TIPOS_VALIDOS),
+                "turmas": turmas,
+                "mapa_cursos": mapa_cursos,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -110,9 +135,43 @@ def criar_usuario(
                 "erro": "Tipo de usuário inválido.",
                 "valores": valores,
                 "tipos": sorted(TIPOS_VALIDOS),
+                "turmas": turmas,
+                "mapa_cursos": mapa_cursos,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+
+    if tipo == "aluno":
+        if turma_id is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="usuarios/usuario-form.html",
+                context={
+                    "usuario": current_user,
+                    "erro": "Selecione a turma do aluno.",
+                    "valores": valores,
+                    "tipos": sorted(TIPOS_VALIDOS),
+                    "turmas": turmas,
+                    "mapa_cursos": mapa_cursos,
+                },
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        turma = db.query(Turma).filter(Turma.id_turma == turma_id).first()
+        if not turma:
+            return templates.TemplateResponse(
+                request=request,
+                name="usuarios/usuario-form.html",
+                context={
+                    "usuario": current_user,
+                    "erro": "Turma inválida.",
+                    "valores": valores,
+                    "tipos": sorted(TIPOS_VALIDOS),
+                    "turmas": turmas,
+                    "mapa_cursos": mapa_cursos,
+                },
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
     if len(senha) < 6:
         return templates.TemplateResponse(
@@ -123,6 +182,8 @@ def criar_usuario(
                 "erro": "A senha deve ter pelo menos 6 caracteres.",
                 "valores": valores,
                 "tipos": sorted(TIPOS_VALIDOS),
+                "turmas": turmas,
+                "mapa_cursos": mapa_cursos,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -137,6 +198,8 @@ def criar_usuario(
                 "erro": "Já existe um usuário com esse email.",
                 "valores": valores,
                 "tipos": sorted(TIPOS_VALIDOS),
+                "turmas": turmas,
+                "mapa_cursos": mapa_cursos,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -152,6 +215,8 @@ def criar_usuario(
                     "erro": "Esse código RFID já está cadastrado.",
                     "valores": valores,
                     "tipos": sorted(TIPOS_VALIDOS),
+                    "turmas": turmas,
+                    "mapa_cursos": mapa_cursos,
                 },
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
@@ -166,6 +231,19 @@ def criar_usuario(
 
         db.add(novo_usuario)
         db.flush()
+
+        if tipo == "aluno":
+            novo_aluno = Aluno(
+                usuario_id=novo_usuario.id_usuario,
+                turma_id=turma_id,
+            )
+            db.add(novo_aluno)
+
+        if tipo == "professor":
+            novo_professor = Professor(
+                usuario_id=novo_usuario.id_usuario,
+            )
+            db.add(novo_professor)
 
         if codigo_rfid:
             nova_tag = RFIDTag(
@@ -187,6 +265,8 @@ def criar_usuario(
                 "erro": "Não foi possível salvar o usuário. Verifique os dados informados.",
                 "valores": valores,
                 "tipos": sorted(TIPOS_VALIDOS),
+                "turmas": turmas,
+                "mapa_cursos": mapa_cursos,
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )

@@ -1,3 +1,5 @@
+from typing import List
+
 from fastapi import APIRouter, Request, Depends, Form
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
@@ -5,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import get_current_user
-from app.models import Usuario, Materia, Curso
+from app.models import Usuario, Materia, Professor, ProfessorMateria
 
 router = APIRouter(prefix="/materias", tags=["materias"])
 templates = Jinja2Templates(directory="public")
@@ -22,12 +24,9 @@ def listar_materias(
 
     materias = (
         db.query(Materia)
-        .order_by(Materia.curso_id.asc(), Materia.semestre.asc(), Materia.nome.asc())
+        .order_by(Materia.codigo.asc(), Materia.nome.asc())
         .all()
     )
-
-    cursos = db.query(Curso).all()
-    mapa_cursos = {c.id_curso: c.nome for c in cursos}
 
     return templates.TemplateResponse(
         request=request,
@@ -35,7 +34,6 @@ def listar_materias(
         context={
             "usuario": current_user,
             "materias": materias,
-            "mapa_cursos": mapa_cursos,
         },
     )
 
@@ -49,7 +47,12 @@ def nova_materia(
     if current_user.tipo != "admin":
         return RedirectResponse(url="/dashboard", status_code=303)
 
-    cursos = db.query(Curso).order_by(Curso.nome.asc()).all()
+    professores = (
+        db.query(Professor, Usuario)
+        .join(Usuario, Usuario.id_usuario == Professor.usuario_id)
+        .order_by(Usuario.nome.asc())
+        .all()
+    )
 
     return templates.TemplateResponse(
         request=request,
@@ -57,7 +60,8 @@ def nova_materia(
         context={
             "usuario": current_user,
             "materia": None,
-            "cursos": cursos,
+            "professores": professores,
+            "professores_selecionados": [],
             "erro": None,
         },
     )
@@ -66,40 +70,43 @@ def nova_materia(
 @router.post("/nova")
 def criar_materia(
     request: Request,
+    codigo: str = Form(...),
     nome: str = Form(...),
-    curso_id: int = Form(...),
-    semestre: int = Form(...),
+    professores_ids: List[int] = Form([]),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
     if current_user.tipo != "admin":
         return RedirectResponse(url="/dashboard", status_code=303)
 
-    cursos = db.query(Curso).order_by(Curso.nome.asc()).all()
-    curso = db.query(Curso).filter(Curso.id_curso == curso_id).first()
+    codigo = codigo.strip().upper()
+    nome = nome.strip()
 
-    if not curso:
-        return templates.TemplateResponse(
-            request=request,
-            name="materias/materia-form.html",
-            context={
-                "usuario": current_user,
-                "materia": None,
-                "cursos": cursos,
-                "erro": "Curso inválido.",
-            },
-        )
+    professores = (
+        db.query(Professor, Usuario)
+        .join(Usuario, Usuario.id_usuario == Professor.usuario_id)
+        .order_by(Usuario.nome.asc())
+        .all()
+    )
 
     try:
         materia = Materia(
-            nome=nome.strip(),
-            curso_id=curso.id_curso,
-            semestre=semestre,
+            codigo=codigo,
+            nome=nome,
         )
 
         db.add(materia)
-        db.commit()
+        db.flush()
 
+        for professor_id in professores_ids:
+            db.add(
+                ProfessorMateria(
+                    professor_id=professor_id,
+                    materia_id=materia.id_materia,
+                )
+            )
+
+        db.commit()
         return RedirectResponse(url="/materias/", status_code=303)
 
     except Exception as e:
@@ -110,7 +117,8 @@ def criar_materia(
             context={
                 "usuario": current_user,
                 "materia": None,
-                "cursos": cursos,
+                "professores": professores,
+                "professores_selecionados": professores_ids,
                 "erro": f"Erro ao cadastrar matéria: {e}",
             },
         )
@@ -131,7 +139,19 @@ def editar_materia_form(
     if not materia:
         return RedirectResponse(url="/materias/", status_code=303)
 
-    cursos = db.query(Curso).order_by(Curso.nome.asc()).all()
+    professores = (
+        db.query(Professor, Usuario)
+        .join(Usuario, Usuario.id_usuario == Professor.usuario_id)
+        .order_by(Usuario.nome.asc())
+        .all()
+    )
+
+    professores_selecionados = [
+        item.professor_id
+        for item in db.query(ProfessorMateria)
+        .filter(ProfessorMateria.materia_id == materia.id_materia)
+        .all()
+    ]
 
     return templates.TemplateResponse(
         request=request,
@@ -139,7 +159,8 @@ def editar_materia_form(
         context={
             "usuario": current_user,
             "materia": materia,
-            "cursos": cursos,
+            "professores": professores,
+            "professores_selecionados": professores_selecionados,
             "erro": None,
         },
     )
@@ -149,9 +170,9 @@ def editar_materia_form(
 def editar_materia(
     materia_id: int,
     request: Request,
+    codigo: str = Form(...),
     nome: str = Form(...),
-    curso_id: int = Form(...),
-    semestre: int = Form(...),
+    professores_ids: List[int] = Form([]),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
@@ -159,27 +180,31 @@ def editar_materia(
         return RedirectResponse(url="/dashboard", status_code=303)
 
     materia = db.query(Materia).filter(Materia.id_materia == materia_id).first()
-    cursos = db.query(Curso).order_by(Curso.nome.asc()).all()
-    curso = db.query(Curso).filter(Curso.id_curso == curso_id).first()
+
+    professores = (
+        db.query(Professor, Usuario)
+        .join(Usuario, Usuario.id_usuario == Professor.usuario_id)
+        .order_by(Usuario.nome.asc())
+        .all()
+    )
 
     if not materia:
         return RedirectResponse(url="/materias/", status_code=303)
 
-    if not curso:
-        return templates.TemplateResponse(
-            request=request,
-            name="materias/materia-form.html",
-            context={
-                "usuario": current_user,
-                "materia": materia,
-                "cursos": cursos,
-                "erro": "Curso inválido.",
-            },
-        )
-
+    materia.codigo = codigo.strip().upper()
     materia.nome = nome.strip()
-    materia.curso_id = curso_id
-    materia.semestre = semestre
+
+    db.query(ProfessorMateria).filter(
+        ProfessorMateria.materia_id == materia.id_materia
+    ).delete()
+
+    for professor_id in professores_ids:
+        db.add(
+            ProfessorMateria(
+                professor_id=professor_id,
+                materia_id=materia.id_materia,
+            )
+        )
 
     db.commit()
 

@@ -39,6 +39,21 @@
       </div>
 
       <div>
+        <label for="turma_id">Turma (apenas para aluno)</label>
+        <select id="turma_id" name="turma_id">
+          <option value="">Selecione</option>
+          {% for turma in turmas %}
+            <option
+              value="{{ turma.id_turma }}"
+              {% if valores and valores.turma_id == turma.id_turma %}selected{% endif %}
+            >
+              {{ mapa_cursos.get(turma.curso_id, "Curso") }} - {{ turma.ano }} / {{ turma.semestre }}º semestre
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div>
         <label for="email">E-mail</label>
         <input
           type="email"

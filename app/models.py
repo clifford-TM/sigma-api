@@ -30,9 +30,8 @@ class Materia(Base):
     __tablename__ = "materias"
 
     id_materia: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    codigo: Mapped[str] = mapped_column(String(20), nullable=False, unique=True)
     nome: Mapped[str] = mapped_column(String(120), nullable=False)
-    curso_id: Mapped[int] = mapped_column(ForeignKey("cursos.id_curso"), nullable=False)
-    semestre: Mapped[int] = mapped_column(Integer, nullable=False)
 
 class Aluno(Base):
     __tablename__ = "alunos"
@@ -52,16 +51,36 @@ class ProfessorMateria(Base):
     professor_id: Mapped[int] = mapped_column(ForeignKey("professores.id_professor"), primary_key=True)
     materia_id: Mapped[int] = mapped_column(ForeignKey("materias.id_materia"), primary_key=True)
 
-class TurmaMateria(Base):
-    __tablename__ = "turma_materias"
+class GradeCurricular(Base):
+    __tablename__ = "grade_curricular"
 
-    turma_id: Mapped[int] = mapped_column(ForeignKey("turmas.id_turma"), primary_key=True)
+    curso_id: Mapped[int] = mapped_column(ForeignKey("cursos.id_curso"), primary_key=True)
     materia_id: Mapped[int] = mapped_column(ForeignKey("materias.id_materia"), primary_key=True)
+    semestre: Mapped[int] = mapped_column(Integer, nullable=False)
+
+class TurmaMateriaProfessor(Base):
+    __tablename__ = "turma_materia_professor"
+
+    turma_id: Mapped[int] = mapped_column(
+        ForeignKey("turmas.id_turma"),
+        primary_key=True
+    )
+
+    materia_id: Mapped[int] = mapped_column(
+        ForeignKey("materias.id_materia"),
+        primary_key=True
+    )
+
+    professor_id: Mapped[int] = mapped_column(
+        ForeignKey("professores.id_professor"),
+        nullable=False
+    )
 
 class Curso(Base):
     __tablename__ = "cursos"
 
     id_curso: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    codigo: Mapped[str] = mapped_column(String(20), nullable=False, unique=True)
     nome: Mapped[str] = mapped_column(String(80), nullable=False, unique=True)
 
 class RFIDTag(Base):
