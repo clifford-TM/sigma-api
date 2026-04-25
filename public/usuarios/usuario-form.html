@@ -17,13 +17,7 @@
     <form action="/usuarios/" method="post">
       <div>
         <label for="nome">Nome</label>
-        <input
-          type="text"
-          id="nome"
-          name="nome"
-          value="{{ valores.nome if valores else '' }}"
-          required
-        />
+        <input type="text" id="nome" name="nome" value="{{ valores.nome if valores else '' }}" required />
       </div>
 
       <div>
@@ -38,8 +32,8 @@
         </select>
       </div>
 
-      <div>
-        <label for="turma_id">Turma (apenas para aluno)</label>
+      <div id="campo_turma" style="display: none;">
+        <label for="turma_id">Turma do aluno</label>
         <select id="turma_id" name="turma_id">
           <option value="">Selecione</option>
           {% for turma in turmas %}
@@ -47,7 +41,10 @@
               value="{{ turma.id_turma }}"
               {% if valores and valores.turma_id == turma.id_turma %}selected{% endif %}
             >
-              {{ mapa_cursos.get(turma.curso_id, "Curso") }} - {{ turma.ano }} / {{ turma.semestre }}º semestre
+              {{ mapa_cursos.get(turma.curso_id, "Curso") }} -
+              {{ turma.semestre }}º semestre -
+              {{ turma.periodo|capitalize }} -
+              {{ turma.ano }}
             </option>
           {% endfor %}
         </select>
@@ -55,23 +52,12 @@
 
       <div>
         <label for="email">E-mail</label>
-        <input
-          type="email"
-          id="email"
-          name="email"
-          value="{{ valores.email if valores else '' }}"
-          required
-        />
+        <input type="email" id="email" name="email" value="{{ valores.email if valores else '' }}" required />
       </div>
 
       <div>
         <label for="senha">Senha</label>
-        <input
-          type="password"
-          id="senha"
-          name="senha"
-          required
-        />
+        <input type="password" id="senha" name="senha" required />
       </div>
 
       <div>
@@ -91,13 +77,33 @@
       </div>
     </form>
 
-    <p>
-      <a href="/usuarios">Voltar para usuários</a>
-    </p>
+    <p><a href="/usuarios">Voltar para usuários</a></p>
 
     <p>
-      <a href="/dashboard">Dashboard</a>
+      <a href="/admin/dashboard">Dashboard</a>
       <a href="/logout">Sair</a>
     </p>
+
+    <script>
+      const tipoSelect = document.getElementById("tipo");
+      const campoTurma = document.getElementById("campo_turma");
+      const turmaSelect = document.getElementById("turma_id");
+
+      function atualizarCamposPorTipo() {
+        const tipo = tipoSelect.value;
+
+        if (tipo === "aluno") {
+          campoTurma.style.display = "block";
+          turmaSelect.required = true;
+        } else {
+          campoTurma.style.display = "none";
+          turmaSelect.required = false;
+          turmaSelect.value = "";
+        }
+      }
+
+      tipoSelect.addEventListener("change", atualizarCamposPorTipo);
+      atualizarCamposPorTipo();
+    </script>
   </body>
 </html>

@@ -42,7 +42,12 @@ def novo_usuario_form(
 ):
     turmas = (
         db.query(Turma)
-        .order_by(Turma.ano.desc(), Turma.curso_id.asc(), Turma.semestre.asc())
+        .order_by(
+            Turma.ano.desc(),
+            Turma.curso_id.asc(),
+            Turma.semestre.asc(),
+            Turma.periodo.asc(),
+        )
         .all()
     )
     cursos = db.query(Curso).all()
@@ -80,8 +85,13 @@ def criar_usuario(
 
     turmas = (
         db.query(Turma)
-        .order_by(Turma.ano.desc(), Turma.curso_id.asc(), Turma.semestre.asc())
-        .all()
+        .order_by(
+            Turma.ano.desc(),
+            Turma.curso_id.asc(),
+            Turma.semestre.asc(),
+            Turma.periodo.asc(),
+        )
+        .all() 
     )
     cursos = db.query(Curso).all()
     mapa_cursos = {c.id_curso: c.nome for c in cursos}

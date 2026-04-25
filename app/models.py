@@ -138,7 +138,10 @@ class Evento(Base):
     fim_real: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     atualizado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    turma_id: Mapped[int | None] = mapped_column(ForeignKey("turmas.id_turma"), nullable=True)
+    materia_id: Mapped[int | None] = mapped_column(ForeignKey("materias.id_materia"), nullable=True)
 
+    
 class EventoParticipante(Base):
     __tablename__ = "evento_participantes"
 

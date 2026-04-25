@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Nova aula - SIGMA</title>
+</head>
+<body>
+    <h1>Nova aula</h1>
+
+    <p>Bem-vindo, {{ usuario.nome }}</p>
+
+    {% if erro %}
+        <p style="color:red;">{{ erro }}</p>
+    {% endif %}
+
+    <form method="post" action="/eventos">
+        <!-- 🔥 Tipo fixo -->
+        <input type="hidden" name="tipo" value="aula">
+
+        <div>
+            <label for="turma_select">Turma</label><br>
+            <select id="turma_select" required>
+                <option value="">Selecione</option>
+
+                {% set turmas_renderizadas = [] %}
+                {% for item in alocacoes %}
+                    {% if item.turma_id not in turmas_renderizadas %}
+                        <option value="{{ item.turma_id }}">
+                            {{ item.curso_codigo }} - {{ item.curso_nome }}
+                            | {{ item.semestre }}º semestre
+                            | {{ item.periodo|capitalize }}
+                            | {{ item.ano }}
+                        </option>
+                        {% set _ = turmas_renderizadas.append(item.turma_id) %}
+                    {% endif %}
+                {% endfor %}
+            </select>
+        </div>
+
+        <br>
+
+        <div>
+            <label for="materia_select">Matéria</label><br>
+            <select id="materia_select" required disabled>
+                <option value="">Selecione uma turma primeiro</option>
+
+                {% for item in alocacoes %}
+                    <option
+                        value="{{ item.materia_id }}"
+                        data-turma-id="{{ item.turma_id }}"
+                    >
+                        {{ item.materia_codigo }} - {{ item.materia_nome }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+<input type="hidden" id="alocacao_id" name="alocacao_id" value="">
+        <br>
+
+        <div>
+            <label for="sala_id">Sala</label><br>
+            <select id="sala_id" name="sala_id" required>
+                <option value="">Selecione</option>
+
+                {% for sala in salas %}
+                    <option
+                        value="{{ sala.id_sala }}"
+                        {% if valores and valores.sala_id == sala.id_sala %}selected{% endif %}
+                    >
+                        {{ sala.numero }}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <br>
+
+        <div>
+            <label for="inicio_previsto">Início previsto</label><br>
+            <input
+                type="datetime-local"
+                id="inicio_previsto"
+                name="inicio_previsto"
+                value="{{ valores.inicio_previsto if valores else '' }}"
+                required
+            />
+        </div>
+
+        <br>
+
+        <div>
+            <label for="fim_previsto">Fim previsto</label><br>
+            <input
+                type="datetime-local"
+                id="fim_previsto"
+                name="fim_previsto"
+                value="{{ valores.fim_previsto if valores else '' }}"
+                required
+            />
+        </div>
+
+        <br>
+
+        <div>
+            <label for="descricao">Descrição</label><br>
+            <textarea
+                id="descricao"
+                name="descricao"
+                rows="4"
+                cols="50"
+            >{{ valores.descricao if valores else '' }}</textarea>
+        </div>
+
+        <br>
+
+        <button type="submit">Agendar aula</button>
+    </form>
+
+    <p>
+        <a href="/eventos">Voltar para eventos</a>
+    </p>
+
+    <script>
+        const turmaSelect = document.getElementById("turma_select");
+        const materiaSelect = document.getElementById("materia_select");
+        const alocacaoInput = document.getElementById("alocacao_id");
+
+        const todasMaterias = Array.from(materiaSelect.querySelectorAll("option"))
+            .filter(option => option.value !== "");
+
+        function atualizarMaterias() {
+            const turmaId = turmaSelect.value;
+
+            materiaSelect.innerHTML = "";
+
+            const optionInicial = document.createElement("option");
+            optionInicial.value = "";
+            optionInicial.textContent = turmaId ? "Selecione" : "Selecione uma turma primeiro";
+            materiaSelect.appendChild(optionInicial);
+
+            alocacaoInput.value = "";
+
+            if (!turmaId) {
+                materiaSelect.disabled = true;
+                return;
+            }
+
+            const materiasFiltradas = todasMaterias.filter(
+                option => option.dataset.turmaId === turmaId
+            );
+
+            materiasFiltradas.forEach(option => {
+                materiaSelect.appendChild(option.cloneNode(true));
+            });
+
+            materiaSelect.disabled = false;
+        }
+
+        function atualizarAlocacao() {
+            if (turmaSelect.value && materiaSelect.value) {
+                alocacaoInput.value = `${turmaSelect.value}:${materiaSelect.value}`;
+            } else {
+                alocacaoInput.value = "";
+            }
+        }
+
+        turmaSelect.addEventListener("change", () => {
+            atualizarMaterias();
+            atualizarAlocacao();
+        });
+
+        materiaSelect.addEventListener("change", atualizarAlocacao);
+
+        atualizarMaterias();
+    </script>
+</body>
+</html>

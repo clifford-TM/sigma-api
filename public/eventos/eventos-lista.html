@@ -58,25 +58,47 @@
         <a href="/seguranca/dashboard">Dashboard</a>
       {% elif usuario.tipo == "tecnico" %}
         <a href="/tecnico/dashboard">Dashboard</a>
+      {% elif usuario.tipo == "zelador" %}
+        <a href="/zelador/dashboard">Dashboard</a>
       {% elif usuario.tipo == "admin" %}
         <a href="/admin/dashboard">Dashboard</a>
       {% endif %}
 
       |
 
-      <a href="/eventos/novo">
-        {% if usuario.tipo == "aluno" %}
-          Solicitar projeto
-        {% else %}
-          Novo evento
-        {% endif %}
-      </a>
+      {% if usuario.tipo == "professor" %}
+        <a href="/eventos/novo?tipo=aula">Nova aula</a>
+        |
+        <a href="/eventos/novo?tipo=projeto">Novo projeto</a>
+
+      {% elif usuario.tipo == "aluno" %}
+        <a href="/eventos/novo?tipo=projeto">Novo projeto</a>
+
+      {% elif usuario.tipo == "zelador" %}
+        <a href="/eventos/novo?tipo=limpeza">Nova limpeza</a>
+
+      {% elif usuario.tipo == "tecnico" %}
+        <a href="/eventos/novo?tipo=manutencao">Nova manutenção</a>
+
+      {% elif usuario.tipo == "seguranca" %}
+        <a href="/eventos/novo?tipo=inspecao">Nova inspeção</a>
+
+      {% elif usuario.tipo == "admin" %}
+        <a href="/eventos/novo?tipo=aula">Nova aula</a>
+        |
+        <a href="/eventos/novo?tipo=projeto">Novo projeto</a>
+        |
+        <a href="/eventos/novo?tipo=limpeza">Nova limpeza</a>
+        |
+        <a href="/eventos/novo?tipo=manutencao">Nova manutenção</a>
+        |
+        <a href="/eventos/novo?tipo=inspecao">Nova inspeção</a>
+      {% endif %}
 
       |
 
       <a href="/logout">Sair</a>
     </nav>
-
     <hr />
 
     {% if eventos %}

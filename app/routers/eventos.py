@@ -18,7 +18,13 @@ from app.models import (
     Presenca,
     ComandoDispositivo,
     Sala,
+    Turma,
+    Curso,
+    Materia,
+    Professor,
+    TurmaMateriaProfessor,
 )
+
 from app.schemas import TagAuthRequest, CadernoFinalPayload
 
 router = APIRouter(prefix="/eventos", tags=["eventos"])
@@ -52,7 +58,7 @@ def rota_lista_por_tipo(user_tipo: str) -> str:
 
 def tipos_permitidos_para_usuario(user_tipo: str) -> list[str]:
     if user_tipo == "professor":
-        return ["aula"]
+        return ["aula", "projeto"]
     if user_tipo == "aluno":
         return ["projeto"]
     if user_tipo == "seguranca":
@@ -65,6 +71,49 @@ def tipos_permitidos_para_usuario(user_tipo: str) -> list[str]:
         return ["aula", "projeto", "inspecao", "manutencao", "limpeza"]
     return []
 
+def template_form_por_tipo(tipo: str) -> str:
+    if tipo == "aula":
+        return "eventos/evento-aula.html"
+    if tipo == "projeto":
+        return "eventos/evento-projeto.html"
+    if tipo in ["limpeza", "manutencao", "inspecao"]:
+        return "eventos/evento-operacional.html"
+    return "eventos/evento-form.html"
+
+
+def carregar_alocacoes_professor(db: Session, current_user: Usuario) -> list[dict]:
+    professor = (
+        db.query(Professor)
+        .filter(Professor.usuario_id == current_user.id_usuario)
+        .first()
+    )
+
+    if not professor:
+        return []
+
+    alocacoes = (
+        db.query(TurmaMateriaProfessor, Turma, Curso, Materia)
+        .join(Turma, Turma.id_turma == TurmaMateriaProfessor.turma_id)
+        .join(Curso, Curso.id_curso == Turma.curso_id)
+        .join(Materia, Materia.id_materia == TurmaMateriaProfessor.materia_id)
+        .filter(TurmaMateriaProfessor.professor_id == professor.id_professor)
+        .all()
+    )
+
+    return [
+        {
+            "turma_id": turma.id_turma,
+            "materia_id": materia.id_materia,
+            "curso_codigo": curso.codigo,
+            "curso_nome": curso.nome,
+            "semestre": turma.semestre,
+            "periodo": turma.periodo,
+            "ano": turma.ano,
+            "materia_codigo": materia.codigo,
+            "materia_nome": materia.nome,
+        }
+        for _, turma, curso, materia in alocacoes
+    ]
 
 def template_lista_eventos() -> str:
     return "eventos/eventos-lista.html"
@@ -123,15 +172,23 @@ def formulario_novo_evento(
     salas = db.query(Sala).order_by(Sala.numero.asc()).all()
     tipos_permitidos = tipos_permitidos_para_usuario(current_user.tipo)
 
+    tipo = request.query_params.get("tipo", "")
+
+    if tipo not in tipos_permitidos:
+        tipo = tipos_permitidos[0] if len(tipos_permitidos) == 1 else ""
+
     context = {
         "usuario": current_user,
         "erro": None,
-        "valores": {},
+        "valores": {"tipo": tipo},
         "salas": salas,
         "tipos_permitidos": tipos_permitidos,
     }
 
-    if current_user.tipo == "aluno":
+    if tipo == "aula":
+        context["alocacoes"] = carregar_alocacoes_professor(db, current_user)
+
+    if tipo == "projeto" and current_user.tipo == "aluno":
         professores = (
             db.query(Usuario)
             .filter(Usuario.tipo == "professor")
@@ -142,10 +199,9 @@ def formulario_novo_evento(
 
     return templates.TemplateResponse(
         request=request,
-        name=template_form_evento(),
+        name=template_form_por_tipo(tipo),
         context=context,
     )
-
 
 @router.post("")
 def criar_evento(
@@ -156,6 +212,7 @@ def criar_evento(
     inicio_previsto: str = Form(...),
     fim_previsto: str = Form(...),
     autorizado_por: int | None = Form(None),
+    alocacao_id: str | None = Form(None),
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
@@ -168,25 +225,10 @@ def criar_evento(
         "inicio_previsto": inicio_previsto,
         "fim_previsto": fim_previsto,
         "autorizado_por": autorizado_por,
+        "alocacao_id": alocacao_id,
     }
 
     salas = db.query(Sala).order_by(Sala.numero.asc()).all()
-    professores = (
-        db.query(Usuario)
-        .filter(Usuario.tipo == "professor")
-        .order_by(Usuario.nome.asc())
-        .all()
-    )
-
-    context = {
-        "usuario": current_user,
-        "erro": None,
-        "valores": valores,
-        "salas": salas,
-    }
-    if current_user.tipo == "aluno":
-        context["professores"] = professores
-
     tipos_permitidos = tipos_permitidos_para_usuario(current_user.tipo)
 
     context = {
@@ -196,11 +238,23 @@ def criar_evento(
         "salas": salas,
         "tipos_permitidos": tipos_permitidos,
     }
+
+    if tipo == "aula":
+        context["alocacoes"] = carregar_alocacoes_professor(db, current_user)
+
+    if tipo == "projeto" and current_user.tipo == "aluno":
+        context["professores"] = (
+            db.query(Usuario)
+            .filter(Usuario.tipo == "professor")
+            .order_by(Usuario.nome.asc())
+            .all()
+        )
+
     if tipo not in tipos_permitidos:
         context["erro"] = "Tipo de evento inválido para este usuário."
         return templates.TemplateResponse(
             request=request,
-            name=template_form_evento(),
+            name=template_form_por_tipo(tipo),
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -210,12 +264,12 @@ def criar_evento(
         context["erro"] = "A sala selecionada não existe."
         return templates.TemplateResponse(
             request=request,
-            name=template_form_evento(),
+            name=template_form_por_tipo(tipo),
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    if tipo == "projeto":
+    if tipo == "projeto" and current_user.tipo == "aluno":
         professor = (
             db.query(Usuario)
             .filter(
@@ -228,7 +282,7 @@ def criar_evento(
             context["erro"] = "O professor autorizador é inválido."
             return templates.TemplateResponse(
                 request=request,
-                name=template_form_evento(),
+                name=template_form_por_tipo(tipo),
                 context=context,
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
@@ -240,7 +294,7 @@ def criar_evento(
         context["erro"] = "Data ou horário inválido."
         return templates.TemplateResponse(
             request=request,
-            name=template_form_evento(),
+            name=template_form_por_tipo(tipo),
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
@@ -249,10 +303,61 @@ def criar_evento(
         context["erro"] = "O horário de término deve ser posterior ao horário de início."
         return templates.TemplateResponse(
             request=request,
-            name=template_form_evento(),
+            name=template_form_por_tipo(tipo),
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+
+    turma_id = None
+    materia_id = None
+
+    if tipo == "aula":
+        if current_user.tipo != "professor":
+            context["erro"] = "Apenas professores podem criar aulas."
+            return templates.TemplateResponse(
+                request=request,
+                name=template_form_por_tipo(tipo),
+                context=context,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            turma_id, materia_id = map(int, (alocacao_id or "").split(":"))
+        except Exception:
+            context["erro"] = "Selecione uma turma e matéria válidas."
+            return templates.TemplateResponse(
+                request=request,
+                name=template_form_por_tipo(tipo),
+                context=context,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+
+        professor = (
+            db.query(Professor)
+            .filter(Professor.usuario_id == current_user.id_usuario)
+            .first()
+        )
+
+        alocacao = (
+            db.query(TurmaMateriaProfessor)
+            .filter(
+                TurmaMateriaProfessor.turma_id == turma_id,
+                TurmaMateriaProfessor.materia_id == materia_id,
+                TurmaMateriaProfessor.professor_id == professor.id_professor,
+            )
+            .first()
+            if professor
+            else None
+        )
+
+        if not alocacao:
+            context["erro"] = "Você não está vinculado a essa turma/matéria."
+            return templates.TemplateResponse(
+                request=request,
+                name=template_form_por_tipo(tipo),
+                context=context,
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
     conflito = (
         db.query(Evento)
@@ -269,20 +374,26 @@ def criar_evento(
         context["erro"] = "Já existe um evento agendado nessa sala para esse horário."
         return templates.TemplateResponse(
             request=request,
-            name=template_form_evento(),
+            name=template_form_por_tipo(tipo),
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    status_inicial = "pendente_aprovacao" if tipo == "projeto" else "agendado"
+    status_inicial = (
+        "pendente_aprovacao"
+        if tipo == "projeto" and current_user.tipo == "aluno"
+        else "agendado"
+    )
 
     novo_evento = Evento(
         tipo=tipo,
         host=current_user.id_usuario,
-        autorizado_por=autorizado_por if tipo == "projeto" else None,
+        autorizado_por=autorizado_por if tipo == "projeto" and current_user.tipo == "aluno" else None,
         forma_inicio="app",
         confirmado_por_rfid=False,
         sala_id=sala_id,
+        turma_id=turma_id,
+        materia_id=materia_id,
         status=status_inicial,
         descricao=descricao if descricao else None,
         inicio_previsto=inicio_dt,
