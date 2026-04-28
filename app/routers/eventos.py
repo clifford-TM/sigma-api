@@ -131,6 +131,108 @@ def template_cancelar_evento() -> str:
     return "eventos/evento-cancelar.html"
 
 
+def registrar_saida_usuario(
+    db: Session,
+    evento: Evento,
+    usuario: Usuario,
+    device_id: str,
+    data_saida: datetime | None = None,
+) -> Presenca:
+    saida_existente = (
+        db.query(Presenca)
+        .filter(
+            Presenca.id_evento == evento.id_evento,
+            Presenca.id_usuario == usuario.id_usuario,
+            Presenca.tipo == "saida",
+            Presenca.valido == True,
+        )
+        .first()
+    )
+
+    if saida_existente:
+        return saida_existente
+
+    entrada_existente = (
+        db.query(Presenca)
+        .filter(
+            Presenca.id_evento == evento.id_evento,
+            Presenca.id_usuario == usuario.id_usuario,
+            Presenca.tipo == "entrada",
+            Presenca.valido == True,
+        )
+        .first()
+    )
+
+    if not entrada_existente:
+        raise HTTPException(
+            status_code=400,
+            detail="Não existe entrada registrada para este usuário neste evento.",
+        )
+
+    dispositivo = (
+        db.query(Dispositivo)
+        .filter(Dispositivo.identificador_fisico == device_id)
+        .first()
+    )
+
+    saida = Presenca(
+        id_evento=evento.id_evento,
+        id_usuario=usuario.id_usuario,
+        dispositivo_id=dispositivo.id_dispositivo if dispositivo else None,
+        data_hora=data_saida or datetime.now(),
+        tipo="saida",
+        origem="rfid",
+    )
+
+    db.add(saida)
+    return saida
+
+def registrar_saidas_automaticas(
+    db: Session,
+    evento: Evento,
+    data_saida: datetime,
+) -> int:
+    entradas = (
+        db.query(Presenca)
+        .filter(
+            Presenca.id_evento == evento.id_evento,
+            Presenca.tipo == "entrada",
+            Presenca.valido == True,
+        )
+        .all()
+    )
+
+    saidas_inseridas = 0
+
+    for entrada in entradas:
+        saida_existente = (
+            db.query(Presenca)
+            .filter(
+                Presenca.id_evento == evento.id_evento,
+                Presenca.id_usuario == entrada.id_usuario,
+                Presenca.tipo == "saida",
+                Presenca.valido == True,
+            )
+            .first()
+        )
+
+        if saida_existente:
+            continue
+
+        saida = Presenca(
+            id_evento=evento.id_evento,
+            id_usuario=entrada.id_usuario,
+            dispositivo_id=entrada.dispositivo_id,
+            data_hora=data_saida,
+            tipo="saida",
+            origem="sincronizacao_dispositivo",
+        )
+
+        db.add(saida)
+        saidas_inseridas += 1
+
+    return saidas_inseridas
+
 @router.get("")
 def listar_eventos_usuario(
     request: Request,
@@ -867,6 +969,145 @@ def autorizar_fim_evento(
     }
 
 
+@router.post("/{evento_id}/solicitar-saida")
+def solicitar_saida_evento(
+    evento_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    evento = db.query(Evento).filter(Evento.id_evento == evento_id).first()
+
+    if not evento:
+        raise HTTPException(status_code=404, detail="Evento não encontrado.")
+
+    if evento.status != "ativo":
+        raise HTTPException(status_code=400, detail="Evento não está ativo.")
+
+    entrada = (
+        db.query(Presenca)
+        .filter(
+            Presenca.id_evento == evento.id_evento,
+            Presenca.id_usuario == current_user.id_usuario,
+            Presenca.tipo == "entrada",
+            Presenca.valido == True,
+        )
+        .first()
+    )
+
+    if not entrada:
+        raise HTTPException(
+            status_code=400,
+            detail="Você não possui entrada registrada neste evento.",
+        )
+
+    saida = (
+        db.query(Presenca)
+        .filter(
+            Presenca.id_evento == evento.id_evento,
+            Presenca.id_usuario == current_user.id_usuario,
+            Presenca.tipo == "saida",
+            Presenca.valido == True,
+        )
+        .first()
+    )
+
+    if saida:
+        raise HTTPException(
+            status_code=400,
+            detail="Sua saída já foi registrada neste evento.",
+        )
+
+    dispositivo = (
+        db.query(Dispositivo)
+        .filter(
+            Dispositivo.sala_id == evento.sala_id,
+            Dispositivo.ativo == True,
+        )
+        .first()
+    )
+
+    if not dispositivo:
+        raise HTTPException(
+            status_code=404,
+            detail="Dispositivo da sala não encontrado.",
+        )
+
+    payload = {
+        "evento_id": evento.id_evento,
+        "sala_id": evento.sala_id,
+        "usuario_id": current_user.id_usuario,
+        "usuario_nome": current_user.nome,
+        "tipo": evento.tipo,
+    }
+
+    comando = ComandoDispositivo(
+        device_id=dispositivo.identificador_fisico,
+        acao="registrar_saida",
+        payload_json=json.dumps(payload, ensure_ascii=False),
+        status="pendente",
+    )
+
+    db.add(comando)
+    db.commit()
+
+    return {
+        "ok": True,
+        "mensagem": "Pedido de saída registrado. Aproxime sua tag no leitor RFID.",
+        "comando_id": comando.id_comando,
+    }
+
+
+@router.post("/{evento_id}/autorizar-saida")
+def autorizar_saida_evento(
+    evento_id: int,
+    payload: TagAuthRequest,
+    db: Session = Depends(get_db),
+):
+    evento = db.query(Evento).filter(Evento.id_evento == evento_id).first()
+
+    if not evento:
+        raise HTTPException(status_code=404, detail="Evento não encontrado.")
+
+    if evento.status != "ativo":
+        raise HTTPException(status_code=400, detail="Evento não está ativo.")
+
+    tag = normalizar_uid(payload.uid)
+
+    rfid = (
+        db.query(RFIDTag)
+        .filter(
+            RFIDTag.codigo == tag,
+            RFIDTag.ativa == True,
+        )
+        .first()
+    )
+
+    if not rfid:
+        raise HTTPException(status_code=403, detail="Tag RFID não cadastrada ou inativa.")
+
+    usuario = db.query(Usuario).filter(Usuario.id_usuario == rfid.usuario_id).first()
+
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário da tag não encontrado.")
+
+    registrar_saida_usuario(
+        db=db,
+        evento=evento,
+        usuario=usuario,
+        device_id=payload.device_id,
+        data_saida=datetime.now(),
+    )
+
+    db.commit()
+
+    return {
+        "ok": True,
+        "mensagem": "Saída registrada com sucesso.",
+        "evento_id": evento.id_evento,
+        "usuario_id": usuario.id_usuario,
+        "usuario_nome": usuario.nome,
+    }
+
 @router.post("/caderno-final")
 def receber_caderno_final(
     payload: CadernoFinalPayload,
@@ -905,18 +1146,25 @@ def receber_caderno_final(
         inseridas += 1
 
     evento.status = "finalizado"
+
     if not evento.fim_real:
         evento.fim_real = datetime.now()
+
+    saidas_inseridas = registrar_saidas_automaticas(
+        db=db,
+        evento=evento,
+        data_saida=evento.fim_real,
+    )
 
     db.commit()
 
     return {
-        "ok": True,
-        "mensagem": "Caderno final recebido.",
-        "evento_id": payload.evento_id,
-        "presencas_inseridas": inseridas,
+    "ok": True,
+    "mensagem": "Caderno final recebido.",
+    "evento_id": payload.evento_id,
+    "presencas_inseridas": inseridas,
+    "saidas_inseridas": saidas_inseridas,
     }
-
 
 @router.get("/dispositivos/{device_id}/comando-pendente")
 def obter_comando_pendente(device_id: str, db: Session = Depends(get_db)):

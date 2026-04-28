@@ -21,15 +21,30 @@
           const dados = await resposta.json();
 
           if (resposta.ok) {
-            alert(
-              "Pedido de encerramento enviado.\n\nAproxime novamente a tag do responsável no leitor RFID."
-            );
+            alert("Pedido de encerramento enviado.\n\nAproxime novamente a tag do responsável no leitor RFID.");
             location.reload();
           } else {
-            alert(
-              "Erro ao encerrar evento: " +
-                (dados.detail || "erro desconhecido")
-            );
+            alert("Erro ao encerrar evento: " + (dados.detail || "erro desconhecido"));
+          }
+        } catch (erro) {
+          console.error(erro);
+          alert("Falha ao comunicar com o servidor.");
+        }
+      }
+
+      async function solicitarSaida(eventoId) {
+        try {
+          const resposta = await fetch(`/eventos/${eventoId}/solicitar-saida`, {
+            method: "POST"
+          });
+
+          const dados = await resposta.json();
+
+          if (resposta.ok) {
+            alert(dados.mensagem || "Pedido de saída enviado. Aproxime sua tag no leitor RFID.");
+            location.reload();
+          } else {
+            alert("Erro ao solicitar saída: " + (dados.detail || "erro desconhecido"));
           }
         } catch (erro) {
           console.error(erro);
@@ -38,6 +53,7 @@
       }
     </script>
   </head>
+
   <body>
     <h1>
       {% if usuario.tipo == "aluno" %}
@@ -67,31 +83,21 @@
       |
 
       {% if usuario.tipo == "professor" %}
-        <a href="/eventos/novo?tipo=aula">Nova aula</a>
-        |
+        <a href="/eventos/novo?tipo=aula">Nova aula</a> |
         <a href="/eventos/novo?tipo=projeto">Novo projeto</a>
-
       {% elif usuario.tipo == "aluno" %}
         <a href="/eventos/novo?tipo=projeto">Novo projeto</a>
-
       {% elif usuario.tipo == "zelador" %}
         <a href="/eventos/novo?tipo=limpeza">Nova limpeza</a>
-
       {% elif usuario.tipo == "tecnico" %}
         <a href="/eventos/novo?tipo=manutencao">Nova manutenção</a>
-
       {% elif usuario.tipo == "seguranca" %}
         <a href="/eventos/novo?tipo=inspecao">Nova inspeção</a>
-
       {% elif usuario.tipo == "admin" %}
-        <a href="/eventos/novo?tipo=aula">Nova aula</a>
-        |
-        <a href="/eventos/novo?tipo=projeto">Novo projeto</a>
-        |
-        <a href="/eventos/novo?tipo=limpeza">Nova limpeza</a>
-        |
-        <a href="/eventos/novo?tipo=manutencao">Nova manutenção</a>
-        |
+        <a href="/eventos/novo?tipo=aula">Nova aula</a> |
+        <a href="/eventos/novo?tipo=projeto">Novo projeto</a> |
+        <a href="/eventos/novo?tipo=limpeza">Nova limpeza</a> |
+        <a href="/eventos/novo?tipo=manutencao">Nova manutenção</a> |
         <a href="/eventos/novo?tipo=inspecao">Nova inspeção</a>
       {% endif %}
 
@@ -99,6 +105,7 @@
 
       <a href="/logout">Sair</a>
     </nav>
+
     <hr />
 
     {% if eventos %}
@@ -115,11 +122,11 @@
             <th>Ações</th>
           </tr>
         </thead>
+
         <tbody>
           {% for evento in eventos %}
             <tr>
               <td>{{ evento.id_evento }}</td>
-
               <td>{{ evento.tipo }}</td>
 
               <td>
@@ -156,11 +163,7 @@
 
               <td>
                 {% if evento.status == "agendado" %}
-                  <form
-                    action="/eventos/{{ evento.id_evento }}/iniciar"
-                    method="post"
-                    style="display:inline;"
-                  >
+                  <form action="/eventos/{{ evento.id_evento }}/iniciar" method="post" style="display:inline;">
                     <button type="submit">
                       {% if usuario.tipo == "aluno" %}
                         Iniciar projeto
@@ -169,13 +172,9 @@
                       {% endif %}
                     </button>
                   </form>
-
                   |
-
                   <a href="/eventos/{{ evento.id_evento }}/editar">Editar</a>
-
                   |
-
                   <a href="/eventos/{{ evento.id_evento }}/cancelar">Cancelar</a>
 
                 {% elif evento.status == "pendente" and usuario.tipo == "aluno" %}
@@ -183,18 +182,19 @@
 
                 {% elif evento.status == "pendente" %}
                   Aguardando confirmação no dispositivo...
-
                   |
-
                   <a href="/eventos/{{ evento.id_evento }}/cancelar">Cancelar</a>
 
                 {% elif evento.status == "ativo" %}
-                  <button
-                    type="button"
-                    onclick="encerrarEvento({{ evento.id_evento }})"
-                  >
-                    Encerrar
-                  </button>
+                  {% if usuario.tipo == "aluno" %}
+                    <button type="button" onclick="solicitarSaida({{ evento.id_evento }})">
+                      Solicitar saída
+                    </button>
+                  {% else %}
+                    <button type="button" onclick="encerrarEvento({{ evento.id_evento }})">
+                      Encerrar
+                    </button>
+                  {% endif %}
 
                 {% elif evento.status == "encerrando" %}
                   Aguardando encerramento no dispositivo...
