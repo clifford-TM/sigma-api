@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Optional
+from typing import Optional, Literal
 
 
 class LoginForm(BaseModel):
@@ -50,6 +50,7 @@ class TagAuthRequest(BaseModel):
 class ParticipantePayload(BaseModel):
     uid: str
     timestamp: str
+    tipo: Literal["entrada", "saida"] = "entrada"   
 
 
 class CadernoFinalPayload(BaseModel):

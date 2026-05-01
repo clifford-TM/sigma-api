@@ -152,6 +152,8 @@
                   Finalizado
                 {% elif evento.status == "cancelado" %}
                   Cancelado
+                {% elif evento.status == "nao_realizado" %}
+                  Não realizado
                 {% else %}
                   {{ evento.status }}
                 {% endif %}
@@ -198,6 +200,9 @@
 
                 {% elif evento.status == "encerrando" %}
                   Aguardando encerramento no dispositivo...
+
+                {% elif evento.status == "nao_realizado" %}
+                  Evento não iniciado dentro da janela de tolerância.
 
                 {% else %}
                   -

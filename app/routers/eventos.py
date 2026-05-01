@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import re
 
@@ -29,6 +29,14 @@ from app.schemas import TagAuthRequest, CadernoFinalPayload
 
 router = APIRouter(prefix="/eventos", tags=["eventos"])
 templates = Jinja2Templates(directory="public")
+
+TOLERANCIA_INICIO = timedelta(minutes=15)
+TOLERANCIA_FIM = timedelta(minutes=15)
+
+
+def agora() -> datetime:
+    # Mantém o padrão atual do projeto: datas naive/local.
+    return datetime.now()
 
 
 class ConfirmarComandoPayload(BaseModel):
@@ -131,61 +139,72 @@ def template_cancelar_evento() -> str:
     return "eventos/evento-cancelar.html"
 
 
-def registrar_saida_usuario(
+def pode_iniciar_evento(evento: Evento) -> tuple[bool, str]:
+    now = agora()
+
+    inicio_minimo = evento.inicio_previsto - TOLERANCIA_INICIO
+    inicio_maximo = evento.inicio_previsto + TOLERANCIA_INICIO
+
+    if now < inicio_minimo:
+        return False, "Ainda está muito cedo para iniciar este evento."
+
+    if now > inicio_maximo:
+        return False, "Este evento ultrapassou a janela de início e será marcado como não realizado."
+
+    return True, ""
+
+
+def deve_marcar_nao_realizado(evento: Evento) -> bool:
+    return (
+        evento.status in ["agendado", "pendente"]
+        and agora() > evento.inicio_previsto + TOLERANCIA_INICIO
+    )
+
+
+def deve_encerrar_automaticamente(evento: Evento) -> bool:
+    return (
+        evento.status == "ativo"
+        and agora() > evento.fim_previsto + TOLERANCIA_FIM
+    )
+
+
+def buscar_comandos_pendentes_do_evento(
     db: Session,
-    evento: Evento,
-    usuario: Usuario,
-    device_id: str,
-    data_saida: datetime | None = None,
-) -> Presenca:
-    saida_existente = (
-        db.query(Presenca)
+    evento_id: int,
+) -> list[ComandoDispositivo]:
+    comandos = (
+        db.query(ComandoDispositivo)
         .filter(
-            Presenca.id_evento == evento.id_evento,
-            Presenca.id_usuario == usuario.id_usuario,
-            Presenca.tipo == "saida",
-            Presenca.valido == True,
+            ComandoDispositivo.status == "pendente",
+            ComandoDispositivo.payload_json.contains(f'"evento_id":{evento_id}'),
         )
-        .first()
+        .all()
     )
 
-    if saida_existente:
-        return saida_existente
+    if comandos:
+        return comandos
 
-    entrada_existente = (
-        db.query(Presenca)
+    return (
+        db.query(ComandoDispositivo)
         .filter(
-            Presenca.id_evento == evento.id_evento,
-            Presenca.id_usuario == usuario.id_usuario,
-            Presenca.tipo == "entrada",
-            Presenca.valido == True,
+            ComandoDispositivo.status == "pendente",
+            ComandoDispositivo.payload_json.contains(f'"evento_id": {evento_id}'),
         )
-        .first()
+        .all()
     )
 
-    if not entrada_existente:
-        raise HTTPException(
-            status_code=400,
-            detail="Não existe entrada registrada para este usuário neste evento.",
-        )
 
-    dispositivo = (
-        db.query(Dispositivo)
-        .filter(Dispositivo.identificador_fisico == device_id)
-        .first()
-    )
+def cancelar_comandos_pendentes_do_evento(db: Session, evento_id: int) -> int:
+    comandos = buscar_comandos_pendentes_do_evento(db, evento_id)
+    cancelados = 0
 
-    saida = Presenca(
-        id_evento=evento.id_evento,
-        id_usuario=usuario.id_usuario,
-        dispositivo_id=dispositivo.id_dispositivo if dispositivo else None,
-        data_hora=data_saida or datetime.now(),
-        tipo="saida",
-        origem="rfid",
-    )
+    for comando in comandos:
+        comando.status = "cancelado"
+        comando.consumido_em = agora()
+        cancelados += 1
 
-    db.add(saida)
-    return saida
+    return cancelados
+
 
 def registrar_saidas_automaticas(
     db: Session,
@@ -233,12 +252,124 @@ def registrar_saidas_automaticas(
 
     return saidas_inseridas
 
+
+def criar_comando_encerramento_evento(
+    db: Session,
+    evento: Evento,
+    modo: str = "manual",
+    host_nome: str | None = None,
+    motivo: str | None = None,
+) -> bool:
+    dispositivo = obter_dispositivo_da_sala(db, evento.sala_id)
+
+    if not dispositivo:
+        return False
+
+    comando_existente = (
+        db.query(ComandoDispositivo)
+        .filter(
+            ComandoDispositivo.device_id == dispositivo.identificador_fisico,
+            ComandoDispositivo.acao == "encerrar_evento",
+            ComandoDispositivo.status == "pendente",
+            ComandoDispositivo.payload_json.contains(f"\"evento_id\": {evento.id_evento}"),
+        )
+        .first()
+    )
+
+    if not comando_existente:
+        comando_existente = (
+            db.query(ComandoDispositivo)
+            .filter(
+                ComandoDispositivo.device_id == dispositivo.identificador_fisico,
+                ComandoDispositivo.acao == "encerrar_evento",
+                ComandoDispositivo.status == "pendente",
+                ComandoDispositivo.payload_json.contains(f"\"evento_id\":{evento.id_evento}"),
+            )
+            .first()
+        )
+
+    if comando_existente:
+        return False
+
+    comando = ComandoDispositivo(
+        device_id=dispositivo.identificador_fisico,
+        acao="encerrar_evento",
+        payload_json=json.dumps({
+            "evento_id": evento.id_evento,
+            "sala_id": evento.sala_id,
+            "host_id": evento.host,
+            "tipo": evento.tipo,
+            "host_nome": host_nome or "Encerramento automático",
+            "modo": modo,
+            "motivo": motivo,
+        }),
+        status="pendente",
+    )
+
+    db.add(comando)
+    return True
+
+
+def sincronizar_eventos(db: Session) -> dict:
+    eventos = (
+        db.query(Evento)
+        .filter(Evento.status.in_(["agendado", "pendente", "ativo", "encerrando"]))
+        .all()
+    )
+
+    now = agora()
+    nao_realizados = 0
+    encerramentos_solicitados = 0
+    comandos_encerramento_criados = 0
+    comandos_cancelados_total = 0
+
+    for evento in eventos:
+        if deve_marcar_nao_realizado(evento):
+            evento.status = "nao_realizado"
+            evento.motivo_nao_realizacao = (
+                "Evento não iniciado dentro da janela de tolerância de 15 minutos."
+            )
+            comandos_cancelados_total += cancelar_comandos_pendentes_do_evento(
+                db=db,
+                evento_id=evento.id_evento,
+            )
+            nao_realizados += 1
+            continue
+
+        if deve_encerrar_automaticamente(evento):
+            comando_criado = criar_comando_encerramento_evento(
+                db=db,
+                evento=evento,
+                modo="automatico",
+                host_nome="Encerramento automático",
+                motivo="Evento ultrapassou o horário previsto de encerramento.",
+            )
+
+            evento.status = "encerrando"
+            encerramentos_solicitados += 1
+
+            if comando_criado:
+                comandos_encerramento_criados += 1
+
+    if nao_realizados or encerramentos_solicitados or comandos_encerramento_criados or comandos_cancelados_total:
+        db.commit()
+
+    return {
+        "nao_realizados": nao_realizados,
+        "encerramentos_solicitados": encerramentos_solicitados,
+        "comandos_encerramento_criados": comandos_encerramento_criados,
+        "comandos_cancelados": comandos_cancelados_total,
+    }
+
+
 @router.get("")
 def listar_eventos_usuario(
     request: Request,
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
+    sincronizar_eventos(db)
+
     eventos = (
         db.query(Evento)
         .filter(Evento.host == current_user.id_usuario)
@@ -403,6 +534,15 @@ def criar_evento(
 
     if fim_dt <= inicio_dt:
         context["erro"] = "O horário de término deve ser posterior ao horário de início."
+        return templates.TemplateResponse(
+            request=request,
+            name=template_form_por_tipo(tipo),
+            context=context,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if inicio_dt < agora():
+        context["erro"] = "Não é possível criar eventos em datas ou horários que já passaram."
         return templates.TemplateResponse(
             request=request,
             name=template_form_por_tipo(tipo),
@@ -655,6 +795,15 @@ def atualizar_evento(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
+    if inicio_dt < agora():
+        context["erro"] = "Não é possível editar o evento para datas ou horários que já passaram."
+        return templates.TemplateResponse(
+            request=request,
+            name=template_editar_evento(),
+            context=context,
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
     conflito = (
         db.query(Evento)
         .filter(
@@ -790,7 +939,7 @@ def cancelar_evento(
 
     for comando in comandos_pendentes:
         comando.status = "cancelado"
-        comando.consumido_em = datetime.utcnow()
+        comando.consumido_em = agora()
 
     db.commit()
 
@@ -806,6 +955,8 @@ def iniciar_evento(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
+    sincronizar_eventos(db)
+
     evento = (
         db.query(Evento)
         .filter(
@@ -818,6 +969,17 @@ def iniciar_evento(
 
     if not evento:
         raise HTTPException(status_code=404, detail="Evento não encontrado ou não pode ser iniciado.")
+
+    pode_iniciar, mensagem = pode_iniciar_evento(evento)
+    if not pode_iniciar:
+        if deve_marcar_nao_realizado(evento):
+            evento.status = "nao_realizado"
+            evento.motivo_nao_realizacao = (
+                "Evento não iniciado dentro da janela de tolerância de 15 minutos."
+            )
+            cancelar_comandos_pendentes_do_evento(db, evento.id_evento)
+            db.commit()
+        raise HTTPException(status_code=400, detail=mensagem)
 
     dispositivo = obter_dispositivo_da_sala(db, evento.sala_id)
     if not dispositivo:
@@ -852,6 +1014,8 @@ def disparar_encerramento_evento(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
+    sincronizar_eventos(db)
+
     evento = (
         db.query(Evento)
         .filter(
@@ -878,6 +1042,8 @@ def disparar_encerramento_evento(
             "host_id": evento.host,
             "tipo": evento.tipo,
             "host_nome": current_user.nome,
+            "modo": "manual",
+            "motivo": "Encerramento solicitado pelo usuário.",
         }),
         status="pendente",
     )
@@ -895,6 +1061,8 @@ def autorizar_inicio(
     payload: TagAuthRequest,
     db: Session = Depends(get_db),
 ):
+    sincronizar_eventos(db)
+
     uid = normalizar_uid(payload.uid)
 
     tag = (
@@ -913,13 +1081,27 @@ def autorizar_inicio(
     if not evento:
         raise HTTPException(status_code=404, detail="Evento não encontrado")
 
+    if evento.status not in ["agendado", "pendente"]:
+        raise HTTPException(status_code=400, detail="Evento não está aguardando início.")
+
+    pode_iniciar, mensagem = pode_iniciar_evento(evento)
+    if not pode_iniciar:
+        if deve_marcar_nao_realizado(evento):
+            evento.status = "nao_realizado"
+            evento.motivo_nao_realizacao = (
+                "Evento não iniciado dentro da janela de tolerância de 15 minutos."
+            )
+            cancelar_comandos_pendentes_do_evento(db, evento.id_evento)
+            db.commit()
+        raise HTTPException(status_code=400, detail=mensagem)
+
     if tag.usuario_id != evento.host:
         raise HTTPException(status_code=403, detail="Tag não pertence ao responsável pelo evento")
 
     evento.status = "ativo"
     evento.confirmado_por_rfid = True
     evento.forma_inicio = "app"
-    evento.inicio_real = datetime.utcnow()
+    evento.inicio_real = agora()
 
     db.commit()
 
@@ -932,6 +1114,8 @@ def autorizar_fim_evento(
     payload: TagAuthRequest,
     db: Session = Depends(get_db),
 ):
+    sincronizar_eventos(db)
+
     uid = normalizar_uid(payload.uid)
 
     evento = db.query(Evento).filter(Evento.id_evento == evento_id).first()
@@ -968,13 +1152,14 @@ def autorizar_fim_evento(
         "evento_id": evento.id_evento,
     }
 
-
-@router.post("/{evento_id}/solicitar-saida")
-def solicitar_saida_evento(
+@router.post("/{evento_id}/registrar-ponto")
+def registrar_ponto_evento(
     evento_id: int,
+    payload: TagAuthRequest,
     db: Session = Depends(get_db),
-    current_user: Usuario = Depends(get_current_user),
 ):
+    sincronizar_eventos(db)
+
     evento = db.query(Evento).filter(Evento.id_evento == evento_id).first()
 
     if not evento:
@@ -983,130 +1168,89 @@ def solicitar_saida_evento(
     if evento.status != "ativo":
         raise HTTPException(status_code=400, detail="Evento não está ativo.")
 
+    uid = normalizar_uid(payload.uid)
+
+    tag = (
+        db.query(RFIDTag)
+        .filter(
+            RFIDTag.codigo == uid,
+            RFIDTag.ativa == True,
+        )
+        .first()
+    )
+
+    if not tag:
+        raise HTTPException(status_code=403, detail="Tag RFID não cadastrada ou inativa.")
+
+    usuario = db.query(Usuario).filter(Usuario.id_usuario == tag.usuario_id).first()
+
+    if not usuario:
+        raise HTTPException(status_code=404, detail="Usuário da tag não encontrado.")
+
+    dispositivo = (
+        db.query(Dispositivo)
+        .filter(Dispositivo.identificador_fisico == payload.device_id)
+        .first()
+    )
+
     entrada = (
         db.query(Presenca)
         .filter(
             Presenca.id_evento == evento.id_evento,
-            Presenca.id_usuario == current_user.id_usuario,
+            Presenca.id_usuario == usuario.id_usuario,
             Presenca.tipo == "entrada",
             Presenca.valido == True,
         )
         .first()
     )
 
-    if not entrada:
-        raise HTTPException(
-            status_code=400,
-            detail="Você não possui entrada registrada neste evento.",
-        )
-
     saida = (
         db.query(Presenca)
         .filter(
             Presenca.id_evento == evento.id_evento,
-            Presenca.id_usuario == current_user.id_usuario,
+            Presenca.id_usuario == usuario.id_usuario,
             Presenca.tipo == "saida",
             Presenca.valido == True,
         )
         .first()
     )
 
-    if saida:
-        raise HTTPException(
-            status_code=400,
-            detail="Sua saída já foi registrada neste evento.",
-        )
+    if not entrada:
+        tipo_registro = "entrada"
+        mensagem = "Entrada registrada com sucesso."
+    elif not saida:
+        tipo_registro = "saida"
+        mensagem = "Saída registrada com sucesso."
+    else:
+        return {
+            "ok": False,
+            "mensagem": "Usuário já possui entrada e saída registradas neste evento.",
+            "evento_id": evento.id_evento,
+            "usuario_id": usuario.id_usuario,
+            "usuario_nome": usuario.nome,
+        }
 
-    dispositivo = (
-        db.query(Dispositivo)
-        .filter(
-            Dispositivo.sala_id == evento.sala_id,
-            Dispositivo.ativo == True,
-        )
-        .first()
+    presenca = Presenca(
+        id_evento=evento.id_evento,
+        id_usuario=usuario.id_usuario,
+        dispositivo_id=dispositivo.id_dispositivo if dispositivo else None,
+        data_hora=agora(),
+        tipo=tipo_registro,
+        origem="rfid",
     )
 
-    if not dispositivo:
-        raise HTTPException(
-            status_code=404,
-            detail="Dispositivo da sala não encontrado.",
-        )
-
-    payload = {
-        "evento_id": evento.id_evento,
-        "sala_id": evento.sala_id,
-        "usuario_id": current_user.id_usuario,
-        "usuario_nome": current_user.nome,
-        "tipo": evento.tipo,
-    }
-
-    comando = ComandoDispositivo(
-        device_id=dispositivo.identificador_fisico,
-        acao="registrar_saida",
-        payload_json=json.dumps(payload, ensure_ascii=False),
-        status="pendente",
-    )
-
-    db.add(comando)
+    db.add(presenca)
     db.commit()
 
     return {
         "ok": True,
-        "mensagem": "Pedido de saída registrado. Aproxime sua tag no leitor RFID.",
-        "comando_id": comando.id_comando,
-    }
-
-
-@router.post("/{evento_id}/autorizar-saida")
-def autorizar_saida_evento(
-    evento_id: int,
-    payload: TagAuthRequest,
-    db: Session = Depends(get_db),
-):
-    evento = db.query(Evento).filter(Evento.id_evento == evento_id).first()
-
-    if not evento:
-        raise HTTPException(status_code=404, detail="Evento não encontrado.")
-
-    if evento.status != "ativo":
-        raise HTTPException(status_code=400, detail="Evento não está ativo.")
-
-    tag = normalizar_uid(payload.uid)
-
-    rfid = (
-        db.query(RFIDTag)
-        .filter(
-            RFIDTag.codigo == tag,
-            RFIDTag.ativa == True,
-        )
-        .first()
-    )
-
-    if not rfid:
-        raise HTTPException(status_code=403, detail="Tag RFID não cadastrada ou inativa.")
-
-    usuario = db.query(Usuario).filter(Usuario.id_usuario == rfid.usuario_id).first()
-
-    if not usuario:
-        raise HTTPException(status_code=404, detail="Usuário da tag não encontrado.")
-
-    registrar_saida_usuario(
-        db=db,
-        evento=evento,
-        usuario=usuario,
-        device_id=payload.device_id,
-        data_saida=datetime.now(),
-    )
-
-    db.commit()
-
-    return {
-        "ok": True,
-        "mensagem": "Saída registrada com sucesso.",
+        "mensagem": mensagem,
         "evento_id": evento.id_evento,
         "usuario_id": usuario.id_usuario,
         "usuario_nome": usuario.nome,
+        "tipo": tipo_registro,
     }
+
 
 @router.post("/caderno-final")
 def receber_caderno_final(
@@ -1118,6 +1262,7 @@ def receber_caderno_final(
         raise HTTPException(status_code=404, detail="Evento não encontrado.")
 
     inseridas = 0
+    ignoradas = 0
 
     for participante in payload.participantes:
         uid = normalizar_uid(participante.uid)
@@ -1132,23 +1277,43 @@ def receber_caderno_final(
         )
 
         if not tag:
+            ignoradas += 1
+            continue
+
+        tipo_presenca = getattr(participante, "tipo", "entrada")
+
+        presenca_existente = (
+            db.query(Presenca)
+            .filter(
+                Presenca.id_evento == payload.evento_id,
+                Presenca.id_usuario == tag.usuario_id,
+                Presenca.tipo == tipo_presenca,
+                Presenca.valido == True,
+            )
+            .first()
+        )
+
+        if presenca_existente:
+            ignoradas += 1
             continue
 
         presenca = Presenca(
             id_evento=payload.evento_id,
             id_usuario=tag.usuario_id,
-            data_hora=datetime.now(),
-            tipo="entrada",
+            data_hora=participante.timestamp,
+            tipo=tipo_presenca,
             origem="rfid",
         )
 
         db.add(presenca)
         inseridas += 1
 
+    db.flush()
+    
     evento.status = "finalizado"
 
     if not evento.fim_real:
-        evento.fim_real = datetime.now()
+        evento.fim_real = agora()
 
     saidas_inseridas = registrar_saidas_automaticas(
         db=db,
@@ -1159,15 +1324,18 @@ def receber_caderno_final(
     db.commit()
 
     return {
-    "ok": True,
-    "mensagem": "Caderno final recebido.",
-    "evento_id": payload.evento_id,
-    "presencas_inseridas": inseridas,
-    "saidas_inseridas": saidas_inseridas,
+        "ok": True,
+        "mensagem": "Caderno final recebido.",
+        "evento_id": payload.evento_id,
+        "presencas_inseridas": inseridas,
+        "presencas_ignoradas": ignoradas,
+        "saidas_inseridas": saidas_inseridas,
     }
 
 @router.get("/dispositivos/{device_id}/comando-pendente")
 def obter_comando_pendente(device_id: str, db: Session = Depends(get_db)):
+    sincronizar_eventos(db)
+
     comando = (
         db.query(ComandoDispositivo)
         .filter(
@@ -1207,7 +1375,7 @@ def confirmar_comando(
         raise HTTPException(status_code=404, detail="Comando não encontrado")
 
     comando.status = "consumido"
-    comando.consumido_em = datetime.utcnow()
+    comando.consumido_em = agora()
     db.commit()
 
     return {"ok": True}

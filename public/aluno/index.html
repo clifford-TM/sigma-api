@@ -3,7 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <title>Dashboard do Aluno - SIGMA</title>
+
+    <script>
+      async function solicitarSaida(eventoId) {
+        try {
+          const resposta = await fetch(`/eventos/${eventoId}/solicitar-saida`, {
+            method: "POST"
+          });
+
+          const dados = await resposta.json();
+
+          if (resposta.ok) {
+            alert(dados.mensagem || "Pedido de saída enviado. Aproxime sua tag no leitor RFID.");
+            location.reload();
+          } else {
+            alert("Erro ao solicitar saída: " + (dados.detail || "erro desconhecido"));
+          }
+        } catch (erro) {
+          console.error(erro);
+          alert("Falha ao comunicar com o servidor.");
+        }
+      }
+    </script>
   </head>
+
   <body>
     <h1>Dashboard do Aluno</h1>
 
@@ -11,9 +34,40 @@
 
     <nav>
       <a href="/eventos">Meus projetos</a>
-      <a href="/eventos/novo">Solicitar projeto</a>
+      |
+      <a href="/eventos/novo?tipo=projeto">Solicitar projeto</a>
+      |
       <a href="/logout">Sair</a>
     </nav>
+
+    <hr />
+
+    <section>
+      <h2>Eventos em andamento</h2>
+
+      {% if eventos_em_andamento %}
+        <ul>
+          {% for evento in eventos_em_andamento %}
+            <li>
+              <strong>{{ evento.tipo|capitalize }}</strong>
+              —
+              {% if evento.sala_id in salas %}
+                Sala {{ salas[evento.sala_id].numero }}
+              {% else %}
+                Sala não encontrada
+              {% endif %}
+              — Status: {{ evento.status }}
+
+              <button type="button" onclick="solicitarSaida({{ evento.id_evento }})">
+                Solicitar saída antecipada
+              </button>
+            </li>
+          {% endfor %}
+        </ul>
+      {% else %}
+        <p>Você não está participando de nenhum evento em andamento.</p>
+      {% endif %}
+    </section>
 
     <hr />
 
