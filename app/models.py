@@ -207,6 +207,7 @@ class Dispositivo(Base):
     sala_id: Mapped[int] = mapped_column(ForeignKey("salas.id_sala"), nullable=False)
     nome: Mapped[str] = mapped_column(String(80), nullable=False)
     identificador_fisico: Mapped[str] = mapped_column(String(80), unique=True, nullable=False)
+    secret_hash: Mapped[str] = mapped_column(String(255), nullable=False)
     ativo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     ultima_comunicacao: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     criado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)

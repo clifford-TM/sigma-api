@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import json
 import re
 
-from fastapi import APIRouter, Depends, Form, HTTPException, Request, status
+from fastapi import APIRouter, Depends, Form, HTTPException, Request, status, Header
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -27,6 +27,7 @@ from app.models import (
 )
 
 from app.schemas import TagAuthRequest, CadernoFinalPayload
+from app.security import verify_password
 
 router = APIRouter(prefix="/eventos", tags=["eventos"])
 templates = Jinja2Templates(directory="public")
@@ -47,6 +48,31 @@ class ConfirmarComandoPayload(BaseModel):
 def normalizar_uid(uid: str) -> str:
     return re.sub(r"[^0-9A-Fa-f]", "", uid).upper()
 
+def autenticar_dispositivo(
+    db: Session,
+    device_id: str,
+    device_secret: str | None,
+) -> Dispositivo:
+    if not device_secret:
+        raise HTTPException(status_code=401, detail="Credencial do dispositivo ausente.")
+
+    dispositivo = (
+        db.query(Dispositivo)
+        .filter(
+            Dispositivo.identificador_fisico == device_id,
+            Dispositivo.ativo == True,
+        )
+        .first()
+    )
+
+    if not dispositivo or not dispositivo.secret_hash:
+        raise HTTPException(status_code=401, detail="Dispositivo não autorizado.")
+
+    if not verify_password(device_secret, dispositivo.secret_hash):
+        raise HTTPException(status_code=401, detail="Dispositivo não autorizado.")
+
+    dispositivo.ultima_comunicacao = agora()
+    return dispositivo
 
 def obter_dispositivo_da_sala(db: Session, sala_id: int) -> Dispositivo | None:
     return (
@@ -1070,9 +1096,12 @@ def disparar_encerramento_evento(
 def autorizar_inicio(
     evento_id: int,
     payload: TagAuthRequest,
+    x_device_secret: str | None = Header(None, alias="X-Device-Secret"),
     db: Session = Depends(get_db),
 ):
     sincronizar_eventos(db)
+
+    dispositivo = autenticar_dispositivo(db, payload.device_id, x_device_secret)
 
     uid = normalizar_uid(payload.uid)
 
@@ -1091,6 +1120,9 @@ def autorizar_inicio(
     evento = db.query(Evento).filter(Evento.id_evento == evento_id).first()
     if not evento:
         raise HTTPException(status_code=404, detail="Evento não encontrado")
+
+    if evento.sala_id != dispositivo.sala_id:
+        raise HTTPException(status_code=403, detail="Dispositivo não pertence à sala do evento.")
 
     if evento.status not in ["agendado", "pendente"]:
         raise HTTPException(status_code=400, detail="Evento não está aguardando início.")
@@ -1116,20 +1148,25 @@ def autorizar_inicio(
 
     return {"ok": True, "mensagem": "Evento iniciado com sucesso"}
 
-
 @router.post("/{evento_id}/autorizar-fim")
 def autorizar_fim_evento(
     evento_id: int,
     payload: TagAuthRequest,
+    x_device_secret: str | None = Header(None, alias="X-Device-Secret"),
     db: Session = Depends(get_db),
 ):
     sincronizar_eventos(db)
+
+    dispositivo = autenticar_dispositivo(db, payload.device_id, x_device_secret)
 
     uid = normalizar_uid(payload.uid)
 
     evento = db.query(Evento).filter(Evento.id_evento == evento_id).first()
     if not evento:
         raise HTTPException(status_code=404, detail="Evento não encontrado.")
+
+    if evento.sala_id != dispositivo.sala_id:
+        raise HTTPException(status_code=403, detail="Dispositivo não pertence à sala do evento.")
 
     tag = (
         db.query(RFIDTag)
@@ -1165,15 +1202,21 @@ def autorizar_fim_evento(
 def autorizar_contingencia_evento(
     evento_id: int,
     payload: TagAuthRequest,
+    x_device_secret: str | None = Header(None, alias="X-Device-Secret"),
     db: Session = Depends(get_db),
 ):
     sincronizar_eventos(db)
+
+    dispositivo = autenticar_dispositivo(db, payload.device_id, x_device_secret)
 
     uid = normalizar_uid(payload.uid)
 
     evento = db.query(Evento).filter(Evento.id_evento == evento_id).first()
     if not evento:
         raise HTTPException(status_code=404, detail="Evento não encontrado.")
+
+    if evento.sala_id != dispositivo.sala_id:
+        raise HTTPException(status_code=403, detail="Dispositivo não pertence à sala do evento.")
 
     if evento.status not in ["ativo", "encerrando"]:
         raise HTTPException(
@@ -1218,14 +1261,20 @@ def autorizar_contingencia_evento(
 def registrar_ponto_evento(
     evento_id: int,
     payload: TagAuthRequest,
+    x_device_secret: str | None = Header(None, alias="X-Device-Secret"),
     db: Session = Depends(get_db),
 ):
     sincronizar_eventos(db)
+
+    dispositivo = autenticar_dispositivo(db, payload.device_id, x_device_secret)
 
     evento = db.query(Evento).filter(Evento.id_evento == evento_id).first()
 
     if not evento:
         raise HTTPException(status_code=404, detail="Evento não encontrado.")
+
+    if evento.sala_id != dispositivo.sala_id:
+        raise HTTPException(status_code=403, detail="Dispositivo não pertence à sala do evento.")
 
     if evento.status != "ativo":
         raise HTTPException(status_code=400, detail="Evento não está ativo.")
@@ -1248,12 +1297,6 @@ def registrar_ponto_evento(
 
     if not usuario:
         raise HTTPException(status_code=404, detail="Usuário da tag não encontrado.")
-
-    dispositivo = (
-        db.query(Dispositivo)
-        .filter(Dispositivo.identificador_fisico == payload.device_id)
-        .first()
-    )
 
     entrada = (
         db.query(Presenca)
@@ -1295,7 +1338,7 @@ def registrar_ponto_evento(
     presenca = Presenca(
         id_evento=evento.id_evento,
         id_usuario=usuario.id_usuario,
-        dispositivo_id=dispositivo.id_dispositivo if dispositivo else None,
+        dispositivo_id=dispositivo.id_dispositivo,
         data_hora=agora(),
         tipo=tipo_registro,
         origem="rfid",
@@ -1313,15 +1356,20 @@ def registrar_ponto_evento(
         "tipo": tipo_registro,
     }
 
-
 @router.post("/caderno-final")
 def receber_caderno_final(
     payload: CadernoFinalPayload,
+    x_device_secret: str | None = Header(None, alias="X-Device-Secret"),
     db: Session = Depends(get_db),
 ):
+    dispositivo = autenticar_dispositivo(db, payload.device_id, x_device_secret)
+
     evento = db.query(Evento).filter(Evento.id_evento == payload.evento_id).first()
     if not evento:
         raise HTTPException(status_code=404, detail="Evento não encontrado.")
+
+    if evento.sala_id != dispositivo.sala_id:
+        raise HTTPException(status_code=403, detail="Dispositivo não pertence à sala do evento.")
 
     inseridas = 0
     ignoradas = 0
@@ -1362,6 +1410,7 @@ def receber_caderno_final(
         presenca = Presenca(
             id_evento=payload.evento_id,
             id_usuario=tag.usuario_id,
+            dispositivo_id=dispositivo.id_dispositivo,
             data_hora=participante.timestamp,
             tipo=tipo_presenca,
             origem="rfid",
@@ -1372,15 +1421,12 @@ def receber_caderno_final(
 
     db.flush()
 
-    # 🔥 FINALIZA EVENTO
     evento.status = "finalizado"
 
-    # 🔥 INSPEÇÃO AUTOMÁTICA PARA PROJETOS
     if evento.tipo == "projeto":
         inicio_inspecao = agora() + timedelta(minutes=1)
         fim_inspecao = inicio_inspecao + timedelta(minutes=30)
 
-        # busca um segurança padrão
         seguranca_padrao = (
             db.query(Usuario)
             .filter(Usuario.tipo == "seguranca")
@@ -1407,9 +1453,8 @@ def receber_caderno_final(
         )
 
         db.add(nova_inspecao)
-        db.flush()  # 🔥 pega id_evento da inspeção
+        db.flush()
 
-        # 🔥 RELAÇÃO PROJETO → INSPEÇÃO
         relacao = EventoRelacao(
             evento_origem_id=evento.id_evento,
             evento_destino_id=nova_inspecao.id_evento,
@@ -1418,11 +1463,9 @@ def receber_caderno_final(
 
         db.add(relacao)
 
-    # 🔥 GARANTE FIM REAL
     if not evento.fim_real:
         evento.fim_real = agora()
 
-    # 🔥 SAÍDAS AUTOMÁTICAS
     saidas_inseridas = registrar_saidas_automaticas(
         db=db,
         evento=evento,
@@ -1441,8 +1484,14 @@ def receber_caderno_final(
     }
 
 @router.get("/dispositivos/{device_id}/comando-pendente")
-def obter_comando_pendente(device_id: str, db: Session = Depends(get_db)):
+def obter_comando_pendente(
+    device_id: str,
+    x_device_secret: str | None = Header(None, alias="X-Device-Secret"),
+    db: Session = Depends(get_db),
+):
     sincronizar_eventos(db)
+
+    autenticar_dispositivo(db, device_id, x_device_secret)
 
     comando = (
         db.query(ComandoDispositivo)
@@ -1453,6 +1502,8 @@ def obter_comando_pendente(device_id: str, db: Session = Depends(get_db)):
         .order_by(ComandoDispositivo.criado_em.asc())
         .first()
     )
+
+    db.commit()
 
     if not comando:
         return {"acao": None}
@@ -1468,8 +1519,11 @@ def obter_comando_pendente(device_id: str, db: Session = Depends(get_db)):
 def confirmar_comando(
     device_id: str,
     payload: ConfirmarComandoPayload,
+    x_device_secret: str | None = Header(None, alias="X-Device-Secret"),
     db: Session = Depends(get_db),
 ):
+    autenticar_dispositivo(db, device_id, x_device_secret)
+
     comando = (
         db.query(ComandoDispositivo)
         .filter(

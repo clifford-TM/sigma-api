@@ -15,6 +15,8 @@ templates = Jinja2Templates(directory="public")
 
 TIPOS_VALIDOS = {"aluno", "professor", "seguranca", "zelador", "tecnico", "admin"}
 
+def somente_admin(current_user: Usuario) -> bool:
+    return current_user.tipo == "admin"
 
 @router.get("/")
 def listar_usuarios(
@@ -22,6 +24,13 @@ def listar_usuarios(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
+    
+    if not somente_admin(current_user):
+        return RedirectResponse(
+            url="/login",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+    
     usuarios = db.query(Usuario).order_by(Usuario.nome.asc()).all()
 
     return templates.TemplateResponse(
@@ -40,6 +49,13 @@ def novo_usuario_form(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
+    
+    if not somente_admin(current_user):
+        return RedirectResponse(
+            url="/login",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+    
     turmas = (
         db.query(Turma)
         .order_by(
@@ -79,8 +95,15 @@ def criar_usuario(
     db: Session = Depends(get_db),
     current_user: Usuario = Depends(get_current_user),
 ):
+    if not somente_admin(current_user):
+        return RedirectResponse(
+            url="/login",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
     nome = nome.strip()
     email = email.strip().lower()
+    senha = senha.strip()
     codigo_rfid = codigo_rfid.strip().upper()
 
     turmas = (
@@ -91,7 +114,7 @@ def criar_usuario(
             Turma.semestre.asc(),
             Turma.periodo.asc(),
         )
-        .all() 
+        .all()
     )
     cursos = db.query(Curso).all()
     mapa_cursos = {c.id_curso: c.nome for c in cursos}
@@ -105,21 +128,6 @@ def criar_usuario(
     }
 
     HEX_RE = re.compile(r"^[0-9A-F]{8,24}$")
-
-    if codigo_rfid and not HEX_RE.match(codigo_rfid):
-        return templates.TemplateResponse(
-            request=request,
-            name="usuarios/usuario-form.html",
-            context={
-                "usuario": current_user,
-                "erro": "O código RFID inválido, verifique a TAG",
-                "valores": valores,
-                "tipos": sorted(TIPOS_VALIDOS),
-                "turmas": turmas,
-                "mapa_cursos": mapa_cursos,
-            },
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
 
     if not nome:
         return templates.TemplateResponse(
@@ -136,6 +144,36 @@ def criar_usuario(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
+    if not email:
+        return templates.TemplateResponse(
+            request=request,
+            name="usuarios/usuario-form.html",
+            context={
+                "usuario": current_user,
+                "erro": "O email é obrigatório.",
+                "valores": valores,
+                "tipos": sorted(TIPOS_VALIDOS),
+                "turmas": turmas,
+                "mapa_cursos": mapa_cursos,
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if len(senha) < 8 or senha.isdigit() or senha.isalpha():
+        return templates.TemplateResponse(
+            request=request,
+            name="usuarios/usuario-form.html",
+            context={
+                "usuario": current_user,
+                "erro": "A senha deve ter pelo menos 8 caracteres e misturar letras com números ou símbolos.",
+                "valores": valores,
+                "tipos": sorted(TIPOS_VALIDOS),
+                "turmas": turmas,
+                "mapa_cursos": mapa_cursos,
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
     if tipo not in TIPOS_VALIDOS:
         return templates.TemplateResponse(
             request=request,
@@ -143,6 +181,21 @@ def criar_usuario(
             context={
                 "usuario": current_user,
                 "erro": "Tipo de usuário inválido.",
+                "valores": valores,
+                "tipos": sorted(TIPOS_VALIDOS),
+                "turmas": turmas,
+                "mapa_cursos": mapa_cursos,
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if codigo_rfid and not HEX_RE.match(codigo_rfid):
+        return templates.TemplateResponse(
+            request=request,
+            name="usuarios/usuario-form.html",
+            context={
+                "usuario": current_user,
+                "erro": "O código RFID inválido, verifique a TAG.",
                 "valores": valores,
                 "tipos": sorted(TIPOS_VALIDOS),
                 "turmas": turmas,
@@ -182,21 +235,6 @@ def criar_usuario(
                 },
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-
-    if len(senha) < 6:
-        return templates.TemplateResponse(
-            request=request,
-            name="usuarios/usuario-form.html",
-            context={
-                "usuario": current_user,
-                "erro": "A senha deve ter pelo menos 6 caracteres.",
-                "valores": valores,
-                "tipos": sorted(TIPOS_VALIDOS),
-                "turmas": turmas,
-                "mapa_cursos": mapa_cursos,
-            },
-            status_code=status.HTTP_400_BAD_REQUEST,
-        )
 
     existe_email = db.query(Usuario).filter(Usuario.email == email).first()
     if existe_email:
@@ -243,25 +281,22 @@ def criar_usuario(
         db.flush()
 
         if tipo == "aluno":
-            novo_aluno = Aluno(
+            db.add(Aluno(
                 usuario_id=novo_usuario.id_usuario,
                 turma_id=turma_id,
-            )
-            db.add(novo_aluno)
+            ))
 
         if tipo == "professor":
-            novo_professor = Professor(
+            db.add(Professor(
                 usuario_id=novo_usuario.id_usuario,
-            )
-            db.add(novo_professor)
+            ))
 
         if codigo_rfid:
-            nova_tag = RFIDTag(
+            db.add(RFIDTag(
                 usuario_id=novo_usuario.id_usuario,
                 codigo=codigo_rfid,
                 ativa=True,
-            )
-            db.add(nova_tag)
+            ))
 
         db.commit()
 

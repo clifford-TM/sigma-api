@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from app.db import get_db
 from app.deps import get_current_user
 from app.models import Dispositivo, Sala, Usuario
+from app.security import gerar_device_secret, hash_password
 
 router = APIRouter(prefix="/dispositivos", tags=["dispositivos"])
 templates = Jinja2Templates(directory="public")
@@ -144,12 +145,15 @@ def criar_dispositivo(
             },
             status_code=status.HTTP_400_BAD_REQUEST,
         )
+    
     try:
+        device_secret = gerar_device_secret()
         novo_dispositivo = Dispositivo(
             nome=nome,
             identificador_fisico=identificador_fisico,
             sala_id=sala_id,
             ativo=ativo_bool,
+            secret_hash=hash_password(device_secret),
         )
         db.add(novo_dispositivo)
         db.commit()
@@ -168,4 +172,9 @@ def criar_dispositivo(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    return RedirectResponse(url="/dispositivos", status_code=status.HTTP_303_SEE_OTHER)
+    return {
+        "ok": True,
+        "mensagem": "Dispositivo cadastrado com sucesso. Guarde este segredo, ele não será exibido novamente.",
+        "device_id": identificador_fisico,
+        "device_secret": device_secret,
+    }

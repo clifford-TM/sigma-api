@@ -13,8 +13,10 @@ templates = Jinja2Templates(directory="public")
 
 def destino_por_tipo(user_tipo: str) -> str:
     tipos_validos = ["professor", "aluno", "seguranca", "tecnico", "zelador", "admin"]
+
     if user_tipo in tipos_validos:
         return f"/{user_tipo}/dashboard"
+
     return "/login"
 
 
@@ -23,17 +25,19 @@ def home(request: Request):
     if request.session.get("user_id"):
         return RedirectResponse(
             url=destino_por_tipo(request.session.get("user_tipo")),
-            status_code=303
+            status_code=status.HTTP_303_SEE_OTHER,
         )
 
-    return RedirectResponse(url="/login", status_code=303)
+    return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
 
 @router.get("/login")
 def login_page(request: Request):
     if request.session.get("user_id"):
-        user_tipo = request.session.get("user_tipo")
-        destino = destino_por_tipo(user_tipo)
-        return RedirectResponse(url=destino, status_code=status.HTTP_303_SEE_OTHER)
+        return RedirectResponse(
+            url=destino_por_tipo(request.session.get("user_tipo")),
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
 
     return templates.TemplateResponse(
         request=request,
@@ -59,13 +63,15 @@ def login(
             status_code=status.HTTP_401_UNAUTHORIZED,
         )
 
+    request.session.clear()
     request.session["user_id"] = user.id_usuario
     request.session["user_nome"] = user.nome
     request.session["user_tipo"] = user.tipo
 
-    destino = destino_por_tipo(user.tipo)
-
-    return RedirectResponse(url=destino, status_code=status.HTTP_303_SEE_OTHER)
+    return RedirectResponse(
+        url=destino_por_tipo(user.tipo),
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
 
 
 @router.get("/logout")
