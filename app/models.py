@@ -140,8 +140,7 @@ class Evento(Base):
     atualizado_em: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     turma_id: Mapped[int | None] = mapped_column(ForeignKey("turmas.id_turma"), nullable=True)
     materia_id: Mapped[int | None] = mapped_column(ForeignKey("materias.id_materia"), nullable=True)
-
-    
+   
 class EventoParticipante(Base):
     __tablename__ = "evento_participantes"
 
@@ -151,6 +150,18 @@ class EventoParticipante(Base):
         Enum("professor", "aluno", "seguranca", "zelador", "tecnico", name="evento_participantes_papel"),
         nullable=False,
     )
+
+class EventoRelacao(Base):
+    __tablename__ = "evento_relacoes"
+
+    id_relacao = Column(Integer, primary_key=True, index=True)
+
+    evento_origem_id = Column(Integer, ForeignKey("eventos.id_evento"), nullable=False)
+    evento_destino_id = Column(Integer, ForeignKey("eventos.id_evento"), nullable=False)
+
+    tipo_relacao = Column(String(50), nullable=False)
+
+    criado_em = Column(DateTime, default=datetime.utcnow)
 
 class Presenca(Base):
     __tablename__ = "presencas"

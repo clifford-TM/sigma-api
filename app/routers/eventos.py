@@ -23,6 +23,7 @@ from app.models import (
     Materia,
     Professor,
     TurmaMateriaProfessor,
+    EventoRelacao
 )
 
 from app.schemas import TagAuthRequest, CadernoFinalPayload
@@ -361,6 +362,8 @@ def sincronizar_eventos(db: Session) -> dict:
         "comandos_cancelados": comandos_cancelados_total,
     }
 
+def usuario_pode_operar_evento(usuario: Usuario, evento: Evento) -> bool:
+    return evento.host == usuario.id_usuario or usuario.tipo == "seguranca"
 
 @router.get("")
 def listar_eventos_usuario(
@@ -961,22 +964,19 @@ def iniciar_evento(
         db.query(Evento)
         .filter(
             Evento.id_evento == evento_id,
-            Evento.host == current_user.id_usuario,
             Evento.status == "agendado",
         )
         .first()
     )
 
-    if not evento:
+    if not evento or not usuario_pode_operar_evento(current_user, evento):
         raise HTTPException(status_code=404, detail="Evento não encontrado ou não pode ser iniciado.")
 
     pode_iniciar, mensagem = pode_iniciar_evento(evento)
     if not pode_iniciar:
         if deve_marcar_nao_realizado(evento):
             evento.status = "nao_realizado"
-            evento.motivo_nao_realizacao = (
-                "Evento não iniciado dentro da janela de tolerância de 15 minutos."
-            )
+            evento.motivo_nao_realizacao = "Evento não iniciado dentro da janela de tolerância de 15 minutos."
             cancelar_comandos_pendentes_do_evento(db, evento.id_evento)
             db.commit()
         raise HTTPException(status_code=400, detail=mensagem)
@@ -985,15 +985,19 @@ def iniciar_evento(
     if not dispositivo:
         raise HTTPException(status_code=404, detail="Dispositivo da sala não encontrado.")
 
+    modo = "manual" if evento.host == current_user.id_usuario else "contingencia"
+
     comando = ComandoDispositivo(
         device_id=dispositivo.identificador_fisico,
         acao="iniciar_evento",
         payload_json=json.dumps({
             "evento_id": evento.id_evento,
             "sala_id": evento.sala_id,
-            "host_id": current_user.id_usuario,
-            "host_nome": current_user.nome,
+            "host_id": evento.host,
             "tipo": evento.tipo,
+            "modo": modo,
+            "acionado_por_id": current_user.id_usuario,
+            "acionado_por_nome": current_user.nome,
         }),
         status="pendente",
     )
@@ -1020,18 +1024,19 @@ def disparar_encerramento_evento(
         db.query(Evento)
         .filter(
             Evento.id_evento == evento_id,
-            Evento.host == current_user.id_usuario,
             Evento.status == "ativo",
         )
         .first()
     )
 
-    if not evento:
+    if not evento or not usuario_pode_operar_evento(current_user, evento):
         raise HTTPException(status_code=404, detail="Evento não encontrado ou não pode ser encerrado.")
 
     dispositivo = obter_dispositivo_da_sala(db, evento.sala_id)
     if not dispositivo:
         raise HTTPException(status_code=404, detail="Dispositivo da sala não encontrado.")
+
+    modo = "manual" if evento.host == current_user.id_usuario else "contingencia"
 
     comando = ComandoDispositivo(
         device_id=dispositivo.identificador_fisico,
@@ -1042,8 +1047,14 @@ def disparar_encerramento_evento(
             "host_id": evento.host,
             "tipo": evento.tipo,
             "host_nome": current_user.nome,
-            "modo": "manual",
-            "motivo": "Encerramento solicitado pelo usuário.",
+            "modo": modo,
+            "acionado_por_id": current_user.id_usuario,
+            "acionado_por_nome": current_user.nome,
+            "motivo": (
+                "Encerramento solicitado pelo responsável."
+                if modo == "manual"
+                else "Encerramento de contingência solicitado pela segurança."
+            ),
         }),
         status="pendente",
     )
@@ -1088,9 +1099,7 @@ def autorizar_inicio(
     if not pode_iniciar:
         if deve_marcar_nao_realizado(evento):
             evento.status = "nao_realizado"
-            evento.motivo_nao_realizacao = (
-                "Evento não iniciado dentro da janela de tolerância de 15 minutos."
-            )
+            evento.motivo_nao_realizacao = "Evento não iniciado dentro da janela de tolerância de 15 minutos."
             cancelar_comandos_pendentes_do_evento(db, evento.id_evento)
             db.commit()
         raise HTTPException(status_code=400, detail=mensagem)
@@ -1147,6 +1156,59 @@ def autorizar_fim_evento(
     return {
         "ok": True,
         "mensagem": "Encerramento autorizado.",
+        "usuario_id": usuario.id_usuario,
+        "usuario_nome": usuario.nome,
+        "evento_id": evento.id_evento,
+    }
+
+@router.post("/{evento_id}/autorizar-contingencia")
+def autorizar_contingencia_evento(
+    evento_id: int,
+    payload: TagAuthRequest,
+    db: Session = Depends(get_db),
+):
+    sincronizar_eventos(db)
+
+    uid = normalizar_uid(payload.uid)
+
+    evento = db.query(Evento).filter(Evento.id_evento == evento_id).first()
+    if not evento:
+        raise HTTPException(status_code=404, detail="Evento não encontrado.")
+
+    if evento.status not in ["ativo", "encerrando"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Evento não está em estado válido para contingência.",
+        )
+
+    tag = (
+        db.query(RFIDTag)
+        .filter(
+            RFIDTag.codigo == uid,
+            RFIDTag.ativa == True,
+        )
+        .first()
+    )
+
+    if not tag:
+        raise HTTPException(status_code=403, detail="Tag não cadastrada.")
+
+    usuario = db.query(Usuario).filter(Usuario.id_usuario == tag.usuario_id).first()
+    if not usuario:
+        raise HTTPException(status_code=403, detail="Usuário da tag não encontrado.")
+
+    if usuario.tipo != "seguranca":
+        raise HTTPException(
+            status_code=403,
+            detail="Tag não pertence a um usuário de segurança.",
+        )
+
+    evento.status = "encerrando"
+    db.commit()
+
+    return {
+        "ok": True,
+        "mensagem": "Encerramento de contingência autorizado.",
         "usuario_id": usuario.id_usuario,
         "usuario_nome": usuario.nome,
         "evento_id": evento.id_evento,
@@ -1309,12 +1371,58 @@ def receber_caderno_final(
         inseridas += 1
 
     db.flush()
-    
+
+    # 🔥 FINALIZA EVENTO
     evento.status = "finalizado"
 
+    # 🔥 INSPEÇÃO AUTOMÁTICA PARA PROJETOS
+    if evento.tipo == "projeto":
+        inicio_inspecao = agora() + timedelta(minutes=1)
+        fim_inspecao = inicio_inspecao + timedelta(minutes=30)
+
+        # busca um segurança padrão
+        seguranca_padrao = (
+            db.query(Usuario)
+            .filter(Usuario.tipo == "seguranca")
+            .order_by(Usuario.id_usuario.asc())
+            .first()
+        )
+
+        host_inspecao = (
+            seguranca_padrao.id_usuario
+            if seguranca_padrao
+            else evento.host
+        )
+
+        nova_inspecao = Evento(
+            tipo="inspecao",
+            host=host_inspecao,
+            sala_id=evento.sala_id,
+            status="agendado",
+            descricao=f"Inspeção automática do projeto #{evento.id_evento}",
+            inicio_previsto=inicio_inspecao,
+            fim_previsto=fim_inspecao,
+            forma_inicio="app",
+            confirmado_por_rfid=False,
+        )
+
+        db.add(nova_inspecao)
+        db.flush()  # 🔥 pega id_evento da inspeção
+
+        # 🔥 RELAÇÃO PROJETO → INSPEÇÃO
+        relacao = EventoRelacao(
+            evento_origem_id=evento.id_evento,
+            evento_destino_id=nova_inspecao.id_evento,
+            tipo_relacao="validacao_pos_projeto",
+        )
+
+        db.add(relacao)
+
+    # 🔥 GARANTE FIM REAL
     if not evento.fim_real:
         evento.fim_real = agora()
 
+    # 🔥 SAÍDAS AUTOMÁTICAS
     saidas_inseridas = registrar_saidas_automaticas(
         db=db,
         evento=evento,

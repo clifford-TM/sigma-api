@@ -2,15 +2,17 @@
 <html lang="pt-BR">
   <head>
     <meta charset="UTF-8" />
-    <title>Validações - SIGMA</title>
+    <title>Relatórios de inspeção - SIGMA</title>
   </head>
   <body>
-    <h1>Validações pendentes</h1>
+    <h1>Relatórios de inspeção pendentes</h1>
 
     <p>Bem-vindo, {{ usuario.nome }}</p>
 
     <nav>
-      <a href="/seguranca/dashboard">Dashboard</a>
+      <a href="/seguranca/dashboard">Dashboard</a> |
+      <a href="/seguranca/salas">Visão Geral das Salas</a> |
+      <a href="/eventos/novo?tipo=inspecao">Nova Inspeção</a> |
       <a href="/logout">Sair</a>
     </nav>
 
@@ -21,10 +23,12 @@
         <thead>
           <tr>
             <th>ID</th>
-            <th>Tipo</th>
+            <th>Origem</th>
             <th>Sala</th>
             <th>Responsável</th>
             <th>Status</th>
+            <th>Horário</th>
+            <th>Descrição</th>
             <th>Ação</th>
           </tr>
         </thead>
@@ -32,7 +36,15 @@
           {% for evento in eventos %}
             <tr>
               <td>{{ evento.id_evento }}</td>
-              <td>{{ evento.tipo }}</td>
+
+              <td>
+                {% if evento.id_evento in ids_inspecoes_automaticas %}
+                  Automática pós-projeto
+                {% else %}
+                  Manual agendada
+                {% endif %}
+              </td>
+
               <td>
                 {% if evento.sala_id in salas %}
                   {{ salas[evento.sala_id].numero }}
@@ -40,6 +52,7 @@
                   Sala {{ evento.sala_id }}
                 {% endif %}
               </td>
+
               <td>
                 {% if evento.host in usuarios %}
                   {{ usuarios[evento.host].nome }}
@@ -47,16 +60,26 @@
                   Usuário {{ evento.host }}
                 {% endif %}
               </td>
+
               <td>{{ evento.status }}</td>
+
               <td>
-                <a href="/seguranca/validacoes/{{ evento.id_evento }}">Validar</a>
+                {{ evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") }}
+                até
+                {{ evento.fim_previsto.strftime("%H:%M") }}
+              </td>
+
+              <td>{{ evento.descricao if evento.descricao else "Inspeção sem descrição" }}</td>
+
+              <td>
+                <a href="/seguranca/validacoes/{{ evento.id_evento }}">Preencher relatório</a>
               </td>
             </tr>
           {% endfor %}
         </tbody>
       </table>
     {% else %}
-      <p>Não há eventos aguardando validação.</p>
+      <p>Não há relatórios de inspeção pendentes.</p>
     {% endif %}
   </body>
 </html>

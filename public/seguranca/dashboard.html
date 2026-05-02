@@ -14,6 +14,8 @@
     <nav>
         <a href="/seguranca/dashboard">Dashboard</a> |
         <a href="/seguranca/salas">Visão Geral das Salas</a> |
+        <a href="/eventos">Meus Eventos</a> |
+        <a href="/eventos/novo?tipo=inspecao">Nova Inspeção</a> |
         <a href="/seguranca/validacoes">Validações</a> |
         <a href="/logout">Sair</a>
     </nav>
@@ -60,9 +62,9 @@
                 -
                 Status: {{ evento.status }}
 
-                <a href="/seguranca/eventos/{{ evento.id_evento }}/encerrar-forcado">
-                    Encerrar Evento
-                </a>
+                <span style="margin-left: 10px; color: gray;">
+                    (Contingência disponível na gestão de eventos)
+                </span>
             </li>
         {% endfor %}
         </ul>
@@ -72,24 +74,30 @@
 
     <hr>
 
-    <h2>Eventos Aguardando Validação</h2>
+    <h2>Inspeções Automáticas Pendentes</h2>
 
     {% if aguardando_validacao %}
         <ul>
         {% for evento in aguardando_validacao %}
             <li>
+                <strong>Inspeção automática</strong>
+                -
                 Sala {{ salas[evento.sala_id].numero if evento.sala_id in salas else evento.sala_id }}
                 -
-                {{ evento.descricao if evento.descricao else evento.tipo }}
+                {{ evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") }}
+                até
+                {{ evento.fim_previsto.strftime("%H:%M") }}
+                -
+                {{ evento.descricao if evento.descricao else "Validação pós-projeto" }}
                 -
                 <a href="/seguranca/validacoes/{{ evento.id_evento }}">
-                    Realizar inspeção
+                    Validar inspeção
                 </a>
             </li>
         {% endfor %}
         </ul>
     {% else %}
-        <p>Não há eventos aguardando validação.</p>
+        <p>Não há inspeções automáticas pendentes.</p>
     {% endif %}
 </body>
 </html>

@@ -12,6 +12,26 @@
     </title>
 
     <script>
+      async function iniciarEvento(eventoId) {
+        try {
+          const resposta = await fetch(`/eventos/${eventoId}/iniciar`, {
+            method: "POST"
+          });
+
+          if (resposta.ok || resposta.redirected) {
+            alert("Pedido de início enviado.\n\nAproxime a tag do responsável no leitor RFID.");
+            location.reload();
+            return;
+          }
+
+          const dados = await resposta.json();
+          alert("Erro ao iniciar evento: " + (dados.detail || "erro desconhecido"));
+        } catch (erro) {
+          console.error(erro);
+          alert("Falha ao comunicar com o servidor.");
+        }
+      }
+
       async function encerrarEvento(eventoId) {
         try {
           const resposta = await fetch(`/eventos/${eventoId}/disparar-fim`, {
@@ -25,26 +45,6 @@
             location.reload();
           } else {
             alert("Erro ao encerrar evento: " + (dados.detail || "erro desconhecido"));
-          }
-        } catch (erro) {
-          console.error(erro);
-          alert("Falha ao comunicar com o servidor.");
-        }
-      }
-
-      async function solicitarSaida(eventoId) {
-        try {
-          const resposta = await fetch(`/eventos/${eventoId}/solicitar-saida`, {
-            method: "POST"
-          });
-
-          const dados = await resposta.json();
-
-          if (resposta.ok) {
-            alert(dados.mensagem || "Pedido de saída enviado. Aproxime sua tag no leitor RFID.");
-            location.reload();
-          } else {
-            alert("Erro ao solicitar saída: " + (dados.detail || "erro desconhecido"));
           }
         } catch (erro) {
           console.error(erro);
@@ -165,15 +165,13 @@
 
               <td>
                 {% if evento.status == "agendado" %}
-                  <form action="/eventos/{{ evento.id_evento }}/iniciar" method="post" style="display:inline;">
-                    <button type="submit">
-                      {% if usuario.tipo == "aluno" %}
-                        Iniciar projeto
-                      {% else %}
-                        Iniciar
-                      {% endif %}
-                    </button>
-                  </form>
+                  <button type="button" onclick="iniciarEvento({{ evento.id_evento }})">
+                    {% if usuario.tipo == "aluno" %}
+                      Iniciar projeto
+                    {% else %}
+                      Iniciar
+                    {% endif %}
+                  </button>
                   |
                   <a href="/eventos/{{ evento.id_evento }}/editar">Editar</a>
                   |
@@ -188,15 +186,13 @@
                   <a href="/eventos/{{ evento.id_evento }}/cancelar">Cancelar</a>
 
                 {% elif evento.status == "ativo" %}
-                  {% if usuario.tipo == "aluno" %}
-                    <button type="button" onclick="solicitarSaida({{ evento.id_evento }})">
-                      Solicitar saída
-                    </button>
-                  {% else %}
-                    <button type="button" onclick="encerrarEvento({{ evento.id_evento }})">
+                  <button type="button" onclick="encerrarEvento({{ evento.id_evento }})">
+                    {% if usuario.tipo == "aluno" %}
+                      Encerrar projeto
+                    {% else %}
                       Encerrar
-                    </button>
-                  {% endif %}
+                    {% endif %}
+                  </button>
 
                 {% elif evento.status == "encerrando" %}
                   Aguardando encerramento no dispositivo...
