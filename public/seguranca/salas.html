@@ -144,9 +144,9 @@
                                     Fazer inspeção
                                 </a>
                             {% elif evento.status in ["ativo", "encerrando"] %}
-                                <a href="/seguranca/eventos/{{ evento.id_evento }}/encerrar-forcado">
-                                    Encerrar
-                                </a>
+                                <form method="post" action="/eventos/{{ evento.id_evento }}/disparar-fim" style="display:inline;">
+                                    <button type="submit">Encerrar</button>
+                                </form>
                             {% endif %}
                         </div>
                     {% endfor %}
