@@ -143,10 +143,12 @@
                                 <a href="/seguranca/validacoes/{{ evento.id_evento }}">
                                     Fazer inspeção
                                 </a>
-                            {% elif evento.status in ["ativo", "encerrando"] %}
-                                <form method="post" action="/eventos/{{ evento.id_evento }}/disparar-fim" style="display:inline;">
-                                    <button type="submit">Encerrar</button>
+                            {% elif evento.status == "ativo" %}
+                                <form method="post" action="/eventos/{{ evento.id_evento }}/disparar-fim-contingencia" style="display:inline;">
+                                    <button type="submit">Encerrar por contingência</button>
                                 </form>
+                            {% elif evento.status == "encerrando" %}
+                                <p><em>Encerramento em andamento...</em></p>
                             {% endif %}
                         </div>
                     {% endfor %}

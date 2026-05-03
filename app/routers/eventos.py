@@ -385,8 +385,6 @@ def sincronizar_eventos(db: Session) -> dict:
         "comandos_cancelados": comandos_cancelados_total,
     }
 
-def usuario_pode_operar_evento(usuario: Usuario, evento: Evento) -> bool:
-    return evento.host == usuario.id_usuario or usuario.tipo == "seguranca"
 
 @router.get("")
 def listar_eventos_usuario(
@@ -992,7 +990,7 @@ def iniciar_evento(
         .first()
     )
 
-    if not evento or not usuario_pode_operar_evento(current_user, evento):
+    if not evento or evento.host != current_user.id_usuario:
         raise HTTPException(status_code=404, detail="Evento não encontrado ou não pode ser iniciado.")
 
     pode_iniciar, mensagem = pode_iniciar_evento(evento)
@@ -1052,7 +1050,7 @@ def disparar_encerramento_evento(
         .first()
     )
 
-    if not evento or not usuario_pode_operar_evento(current_user, evento):
+    if not evento or evento.host != current_user.id_usuario:
         raise HTTPException(status_code=404, detail="Evento não encontrado ou não pode ser encerrado.")
 
     dispositivo = obter_dispositivo_da_sala(db, evento.sala_id)
@@ -1088,6 +1086,68 @@ def disparar_encerramento_evento(
 
     return {"ok": True, "mensagem": "Comando registrado para o dispositivo."}
 
+@router.post("/{evento_id}/disparar-fim-contingencia")
+def disparar_encerramento_contingencia(
+    evento_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    sincronizar_eventos(db)
+
+    if current_user.tipo != "seguranca":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Apenas segurança pode solicitar encerramento de contingência.",
+        )
+
+    evento = (
+        db.query(Evento)
+        .filter(
+            Evento.id_evento == evento_id,
+            Evento.status == "ativo",
+        )
+        .first()
+    )
+
+    if not evento:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Evento não encontrado ou não pode ser encerrado.",
+        )
+
+    dispositivo = obter_dispositivo_da_sala(db, evento.sala_id)
+    if not dispositivo:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Dispositivo da sala não encontrado.",
+        )
+
+    comando = ComandoDispositivo(
+        device_id=dispositivo.identificador_fisico,
+        acao="encerrar_evento",
+        payload_json=json.dumps({
+            "evento_id": evento.id_evento,
+            "sala_id": evento.sala_id,
+            "host_id": evento.host,
+            "tipo": evento.tipo,
+            "host_nome": current_user.nome,
+            "modo": "contingencia",
+            "acionado_por_id": current_user.id_usuario,
+            "acionado_por_nome": current_user.nome,
+            "motivo": "Encerramento de contingência solicitado pela segurança.",
+        }),
+        status="pendente",
+    )
+
+    evento.status = "encerrando"
+
+    db.add(comando)
+    db.commit()
+
+    return RedirectResponse(
+        url="/seguranca/salas",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
 
 @router.post("/{evento_id}/autorizar-inicio")
 def autorizar_inicio(
