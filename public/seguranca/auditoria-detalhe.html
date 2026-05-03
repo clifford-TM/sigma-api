@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Detalhes da auditoria - SIGMA</title>
+</head>
+<body>
+    <h1>Detalhes da auditoria</h1>
+
+    <p><a href="/seguranca/auditoria">Voltar para auditoria</a></p>
+
+    <h2>Evento #{{ evento.id_evento }}</h2>
+
+    <table border="1" cellpadding="6">
+        <tr>
+            <th>Tipo</th>
+            <td>{{ evento.tipo }}</td>
+        </tr>
+        <tr>
+            <th>Status</th>
+            <td>{{ evento.status }}</td>
+        </tr>
+        <tr>
+            <th>Sala</th>
+            <td>
+                {% if evento.sala %}
+                    {{ evento.sala.numero }} — {{ evento.sala.tipo }}
+                {% else %}
+                    -
+                {% endif %}
+            </td>
+        </tr>
+        <tr>
+            <th>Responsável</th>
+            <td>{{ evento.host_usuario.nome if evento.host_usuario else "-" }}</td>
+        </tr>
+        <tr>
+            <th>Autorizado por</th>
+            <td>{{ evento.autorizado_por_usuario.nome if evento.autorizado_por_usuario else "-" }}</td>
+        </tr>
+        <tr>
+            <th>Forma de início</th>
+            <td>{{ evento.forma_inicio or "-" }}</td>
+        </tr>
+        <tr>
+            <th>Confirmado por RFID</th>
+            <td>{{ "Sim" if evento.confirmado_por_rfid else "Não" }}</td>
+        </tr>
+        <tr>
+            <th>Motivo de não realização</th>
+            <td>{{ evento.motivo_nao_realizacao or "-" }}</td>
+        </tr>
+        <tr>
+            <th>Descrição</th>
+            <td>{{ evento.descricao or "-" }}</td>
+        </tr>
+        <tr>
+            <th>Início previsto</th>
+            <td>{{ evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") if evento.inicio_previsto else "-" }}</td>
+        </tr>
+        <tr>
+            <th>Início real</th>
+            <td>{{ evento.inicio_real.strftime("%d/%m/%Y %H:%M") if evento.inicio_real else "-" }}</td>
+        </tr>
+        <tr>
+            <th>Fim previsto</th>
+            <td>{{ evento.fim_previsto.strftime("%d/%m/%Y %H:%M") if evento.fim_previsto else "-" }}</td>
+        </tr>
+        <tr>
+            <th>Fim real</th>
+            <td>{{ evento.fim_real.strftime("%d/%m/%Y %H:%M") if evento.fim_real else "-" }}</td>
+        </tr>
+    </table>
+
+    <h2>Alertas</h2>
+
+    {% if alertas %}
+        <ul>
+            {% for alerta in alertas %}
+                <li>{{ alerta }}</li>
+            {% endfor %}
+        </ul>
+    {% else %}
+        <p>Nenhum alerta encontrado.</p>
+    {% endif %}
+
+    <h2>Linha do tempo</h2>
+
+    {% if linha_do_tempo %}
+        <ol>
+            {% for item in linha_do_tempo %}
+                <li>
+                    <strong>{{ item.data_hora.strftime("%d/%m/%Y %H:%M:%S") if item.data_hora else "-" }}</strong>
+                    — {{ item.descricao }}
+                </li>
+            {% endfor %}
+        </ol>
+    {% else %}
+        <p>Nenhum registro na linha do tempo.</p>
+    {% endif %}
+
+    <h2>Participantes esperados</h2>
+
+    {% if participantes %}
+        <table border="1" cellpadding="6">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Papel</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ep, usuario in participantes %}
+                    <tr>
+                        <td>{{ usuario.nome }}</td>
+                        <td>{{ ep.papel }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Nenhum participante esperado registrado.</p>
+    {% endif %}
+
+    <h2>Presenças registradas</h2>
+
+    {% if presencas %}
+        <table border="1" cellpadding="6">
+            <thead>
+                <tr>
+                    <th>Usuário</th>
+                    <th>Tipo</th>
+                    <th>Origem</th>
+                    <th>Data/hora</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for presenca, usuario in presencas %}
+                    <tr>
+                        <td>{{ usuario.nome }}</td>
+                        <td>{{ presenca.tipo }}</td>
+                        <td>{{ presenca.origem }}</td>
+                        <td>{{ presenca.data_hora.strftime("%d/%m/%Y %H:%M:%S") if presenca.data_hora else "-" }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Nenhuma presença registrada.</p>
+    {% endif %}
+</body>
+</html>

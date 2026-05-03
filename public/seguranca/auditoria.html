@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Auditoria de eventos - SIGMA</title>
+</head>
+<body>
+    <h1>Auditoria de eventos</h1>
+
+    <p>Bem-vindo, {{ usuario.nome }}</p>
+
+    <p><a href="/seguranca/dashboard">Voltar ao dashboard</a></p>
+
+    <form method="get" action="/seguranca/auditoria">
+        <label>Tipo:</label>
+        <select name="tipo">
+            <option value="">Todos</option>
+            <option value="aula" {% if filtros.tipo == "aula" %}selected{% endif %}>Aula</option>
+            <option value="projeto" {% if filtros.tipo == "projeto" %}selected{% endif %}>Projeto</option>
+            <option value="limpeza" {% if filtros.tipo == "limpeza" %}selected{% endif %}>Limpeza</option>
+            <option value="manutencao" {% if filtros.tipo == "manutencao" %}selected{% endif %}>Manutenção</option>
+            <option value="inspecao" {% if filtros.tipo == "inspecao" %}selected{% endif %}>Inspeção</option>
+        </select>
+
+        <label>Status:</label>
+        <select name="status_evento">
+            <option value="">Todos</option>
+            <option value="pendente_aprovacao" {% if filtros.status_evento == "pendente_aprovacao" %}selected{% endif %}>Pendente aprovação</option>
+            <option value="agendado" {% if filtros.status_evento == "agendado" %}selected{% endif %}>Agendado</option>
+            <option value="pendente" {% if filtros.status_evento == "pendente" %}selected{% endif %}>Pendente</option>
+            <option value="ativo" {% if filtros.status_evento == "ativo" %}selected{% endif %}>Ativo</option>
+            <option value="encerrando" {% if filtros.status_evento == "encerrando" %}selected{% endif %}>Encerrando</option>
+            <option value="aguardando_validacao" {% if filtros.status_evento == "aguardando_validacao" %}selected{% endif %}>Aguardando validação</option>
+            <option value="finalizado" {% if filtros.status_evento == "finalizado" %}selected{% endif %}>Finalizado</option>
+            <option value="cancelado" {% if filtros.status_evento == "cancelado" %}selected{% endif %}>Cancelado</option>
+            <option value="nao_realizado" {% if filtros.status_evento == "nao_realizado" %}selected{% endif %}>Não realizado</option>
+        </select>
+
+        <label>Sala:</label>
+        <select name="sala_id">
+            <option value="">Todas</option>
+            {% for sala in salas %}
+                <option value="{{ sala.id_sala }}" {% if filtros.sala_id == sala.id_sala %}selected{% endif %}>
+                    {{ sala.label }}
+                </option>
+            {% endfor %}
+        </select>
+
+        <label>De:</label>
+        <input type="date" name="data_inicio" value="{{ filtros.data_inicio or '' }}">
+
+        <label>Até:</label>
+        <input type="date" name="data_fim" value="{{ filtros.data_fim or '' }}">
+
+        <label>
+            <input
+                type="checkbox"
+                name="somente_problemas"
+                value="true"
+                {% if filtros.somente_problemas %}checked{% endif %}
+            >
+            Somente problemas
+        </label>
+
+        <button type="submit">Filtrar</button>
+        <a href="/seguranca/auditoria">Limpar</a>
+    </form>
+
+    <hr>
+
+    {% if eventos_auditados %}
+        <table border="1" cellpadding="6">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Tipo</th>
+                    <th>Sala</th>
+                    <th>Responsável</th>
+                    <th>Início previsto</th>
+                    <th>Início real</th>
+                    <th>Fim previsto</th>
+                    <th>Fim real</th>
+                    <th>Status</th>
+                    <th>Presenças</th>
+                    <th>Nível</th>
+                    <th>Alertas</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for item in eventos_auditados %}
+                    <tr>
+                        <td>{{ item.evento.id_evento }}</td>
+                        <td>{{ item.evento.tipo }}</td>
+                        <td>{{ item.sala_label }}</td>
+                        <td>{{ item.evento.host_usuario.nome if item.evento.host_usuario else "-" }}</td>
+                        <td>{{ item.evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") if item.evento.inicio_previsto else "-" }}</td>
+                        <td>{{ item.evento.inicio_real.strftime("%d/%m/%Y %H:%M") if item.evento.inicio_real else "-" }}</td>
+                        <td>{{ item.evento.fim_previsto.strftime("%d/%m/%Y %H:%M") if item.evento.fim_previsto else "-" }}</td>
+                        <td>{{ item.evento.fim_real.strftime("%d/%m/%Y %H:%M") if item.evento.fim_real else "-" }}</td>
+                        <td>{{ item.evento.status }}</td>
+                        <td>{{ item.presencas_count }}</td>
+                        <td>{{ item.nivel }}</td>
+                        <td>
+                            {% if item.alertas %}
+                                <ul>
+                                    {% for alerta in item.alertas %}
+                                        <li>{{ alerta }}</li>
+                                    {% endfor %}
+                                </ul>
+                            {% else %}
+                                OK
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/seguranca/auditoria/{{ item.evento.id_evento }}">Detalhes</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Nenhum evento encontrado.</p>
+    {% endif %}
+</body>
+</html>

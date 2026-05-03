@@ -10,7 +10,8 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import get_current_user
-from app.models import Evento, Sala, Usuario, EventoRelacao, EstadoAtualSala
+from app.models import Evento, Sala, Usuario, EventoRelacao, EstadoAtualSala, EventoParticipante, Presenca
+from datetime import datetime, time
 
 router = APIRouter(prefix="/seguranca", tags=["seguranca"])
 templates = Jinja2Templates(directory="public")
@@ -354,3 +355,237 @@ def api_status_salas(
         })
 
     return resposta
+
+@router.get("/auditoria")
+def auditoria_eventos(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+    tipo: str | None = None,
+    status_evento: str | None = None,
+    sala_id: int | None = None,
+    data_inicio: str | None = None,
+    data_fim: str | None = None,
+    somente_problemas: bool = False,
+):
+    if not usuario_eh_seguranca(current_user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    query = (
+        db.query(Evento)
+        .order_by(Evento.inicio_previsto.desc())
+    )
+
+    if tipo:
+        query = query.filter(Evento.tipo == tipo)
+
+    if status_evento:
+        query = query.filter(Evento.status == status_evento)
+
+    if sala_id:
+        query = query.filter(Evento.sala_id == sala_id)
+
+    # 🔥 filtro por data
+    if data_inicio:
+        inicio_dt = datetime.combine(
+            datetime.strptime(data_inicio, "%Y-%m-%d").date(),
+            time.min
+        )
+        query = query.filter(Evento.inicio_previsto >= inicio_dt)
+
+    if data_fim:
+        fim_dt = datetime.combine(
+            datetime.strptime(data_fim, "%Y-%m-%d").date(),
+            time.max
+        )
+        query = query.filter(Evento.inicio_previsto <= fim_dt)
+
+    eventos = query.all()
+
+    eventos_auditados = []
+
+    for evento in eventos:
+        presencas_count = (
+            db.query(Presenca)
+            .filter(Presenca.id_evento == evento.id_evento)
+            .count()
+        )
+
+        alertas = []
+
+        if evento.status == "nao_realizado":
+            alertas.append("Evento não realizado")
+
+        if evento.status == "cancelado":
+            alertas.append("Evento cancelado")
+
+        if evento.status == "aguardando_validacao":
+            alertas.append("Aguardando validação")
+
+        if evento.status == "finalizado" and presencas_count == 0:
+            alertas.append("Finalizado sem presenças")
+
+        if evento.status in ["ativo", "encerrando"]:
+            alertas.append("Evento ainda aberto")
+
+        if evento.inicio_previsto and evento.inicio_real:
+            atraso_inicio = (evento.inicio_real - evento.inicio_previsto).total_seconds() / 60
+            if atraso_inicio > 15:
+                alertas.append("Início fora da tolerância")
+
+        if evento.fim_previsto and evento.fim_real:
+            atraso_fim = (evento.fim_real - evento.fim_previsto).total_seconds() / 60
+            if atraso_fim > 15:
+                alertas.append("Fim fora da tolerância")
+
+        nivel = "OK"
+        if alertas:
+            nivel = "Atenção"
+
+        if any(
+            termo in " ".join(alertas).lower()
+            for termo in ["não realizado", "sem presenças", "fora da tolerância"]
+        ):
+            nivel = "Crítico"
+
+        if somente_problemas and nivel == "OK":
+            continue
+
+        sala_label = "-"
+        if evento.sala:
+            sala_label = (
+                getattr(evento.sala, "nome", None)
+                or getattr(evento.sala, "descricao", None)
+                or getattr(evento.sala, "identificacao", None)
+                or f"Sala {evento.sala.id_sala}"
+            )
+
+        eventos_auditados.append({
+            "evento": evento,
+            "host": evento.host_usuario,
+            "presencas_count": presencas_count,
+            "alertas": alertas,
+            "nivel": nivel,
+            "sala_label": sala_label,
+        })
+
+    # 🔥 salas para filtro com label seguro
+    salas_db = db.query(Sala).order_by(Sala.id_sala).all()
+
+    salas = []
+    for sala in salas_db:
+        label = (
+            getattr(sala, "nome", None)
+            or getattr(sala, "descricao", None)
+            or getattr(sala, "identificacao", None)
+            or f"Sala {sala.id_sala}"
+        )
+
+        salas.append({
+            "id_sala": sala.id_sala,
+            "label": label,
+        })
+
+    return templates.TemplateResponse(
+        "seguranca/auditoria.html",
+        {
+            "request": request,
+            "usuario": current_user,
+            "eventos_auditados": eventos_auditados,
+            "salas": salas,
+            "filtros": {
+                "tipo": tipo,
+                "status_evento": status_evento,
+                "sala_id": sala_id,
+                "data_inicio": data_inicio,
+                "data_fim": data_fim,
+                "somente_problemas": somente_problemas,
+            },
+        },
+    )
+
+@router.get("/auditoria/{evento_id}")
+def auditoria_evento_detalhe(
+    evento_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not usuario_eh_seguranca(current_user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    evento = db.query(Evento).filter(Evento.id_evento == evento_id).first()
+
+    if not evento:
+        return RedirectResponse(
+            url="/seguranca/auditoria",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    participantes = (
+        db.query(EventoParticipante, Usuario)
+        .join(Usuario, Usuario.id_usuario == EventoParticipante.usuario_id)
+        .filter(EventoParticipante.evento_id == evento_id)
+        .order_by(Usuario.nome)
+        .all()
+    )
+
+    presencas = (
+        db.query(Presenca, Usuario)
+        .join(Usuario, Usuario.id_usuario == Presenca.id_usuario)
+        .filter(Presenca.id_evento == evento_id)
+        .order_by(Presenca.data_hora)
+        .all()
+    )
+
+    linha_do_tempo = []
+
+    if evento.inicio_previsto:
+        linha_do_tempo.append({"data_hora": evento.inicio_previsto, "descricao": "Início previsto"})
+
+    if evento.inicio_real:
+        linha_do_tempo.append({"data_hora": evento.inicio_real, "descricao": "Evento iniciado"})
+
+    for presenca, usuario in presencas:
+        linha_do_tempo.append({
+            "data_hora": presenca.data_hora,
+            "descricao": f"{usuario.nome} registrou {presenca.tipo}",
+        })
+
+    if evento.fim_previsto:
+        linha_do_tempo.append({"data_hora": evento.fim_previsto, "descricao": "Fim previsto"})
+
+    if evento.fim_real:
+        linha_do_tempo.append({"data_hora": evento.fim_real, "descricao": "Evento finalizado"})
+
+    linha_do_tempo.sort(key=lambda x: x["data_hora"] or evento.criado_em)
+
+    alertas = []
+
+    if evento.status == "nao_realizado":
+        alertas.append("Evento não realizado")
+
+    if evento.status == "cancelado":
+        alertas.append("Evento cancelado")
+
+    if evento.status == "aguardando_validacao":
+        alertas.append("Aguardando validação")
+
+    if evento.status == "finalizado" and not presencas:
+        alertas.append("Finalizado sem presenças")
+
+    if evento.status in ["ativo", "encerrando"]:
+        alertas.append("Evento ainda aberto")
+
+    return templates.TemplateResponse(
+        "seguranca/auditoria-detalhe.html",
+        {
+            "request": request,
+            "usuario": current_user,
+            "evento": evento,
+            "participantes": participantes,
+            "presencas": presencas,
+            "linha_do_tempo": linha_do_tempo,
+            "alertas": alertas,
+        },
+    )
