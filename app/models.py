@@ -189,6 +189,33 @@ class EstadoSala(Base):
     cor: Mapped[str] = mapped_column(String(7), nullable=False)
     descricao: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
+class EstadoAtualSala(Base):
+    __tablename__ = "estado_atual_sala"
+
+    id_estado: Mapped[int] = mapped_column(
+        Integer,
+        primary_key=True,
+        autoincrement=True,
+    )
+
+    sala_id: Mapped[int] = mapped_column(
+        Integer,
+        ForeignKey("salas.id_sala"),
+        unique=True,
+        nullable=False,
+    )
+
+    porta_aberta: Mapped[bool] = mapped_column(
+        Boolean,
+        nullable=False,
+        default=False,
+    )
+
+    atualizado_em: Mapped[datetime | None] = mapped_column(
+        DateTime,
+        nullable=True,
+    )
+
 class Sala(Base):
     __tablename__ = "salas"
 

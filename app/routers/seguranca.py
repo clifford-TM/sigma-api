@@ -2,7 +2,7 @@
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Request, status
+from fastapi import APIRouter, Depends, Request, status, HTTPException
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import or_
@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from app.db import get_db
 from app.deps import get_current_user
-from app.models import Evento, Sala, Usuario, EventoRelacao
+from app.models import Evento, Sala, Usuario, EventoRelacao, EstadoAtualSala
 
 router = APIRouter(prefix="/seguranca", tags=["seguranca"])
 templates = Jinja2Templates(directory="public")
@@ -81,7 +81,6 @@ def dashboard_seguranca(
         },
     )
 
-
 @router.get("/salas")
 def visao_geral_salas(
     request: Request,
@@ -99,6 +98,8 @@ def visao_geral_salas(
         .all()
     )
 
+    estados_sala = db.query(EstadoAtualSala).all()
+
     usuarios = {usuario.id_usuario: usuario for usuario in db.query(Usuario).all()}
 
     eventos_por_sala = {}
@@ -109,6 +110,11 @@ def visao_geral_salas(
 
         eventos_por_sala[evento.sala_id].append(evento)
 
+    estados_por_sala = {
+        estado.sala_id: estado
+        for estado in estados_sala
+    }
+
     return templates.TemplateResponse(
         "seguranca/salas.html",
         {
@@ -116,10 +122,10 @@ def visao_geral_salas(
             "usuario": current_user,
             "salas": salas,
             "eventos_por_sala": eventos_por_sala,
+            "estados_por_sala": estados_por_sala,
             "usuarios": usuarios,
         },
     )
-
 
 @router.get("/validacoes")
 def listar_validacoes(
@@ -278,3 +284,73 @@ async def concluir_validacao(
         url="/seguranca/validacoes",
         status_code=status.HTTP_303_SEE_OTHER,
     )
+
+@router.get("/api/salas/status")
+def api_status_salas(
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if current_user.tipo != "seguranca":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Acesso permitido apenas para segurança.",
+        )
+
+    salas = db.query(Sala).order_by(Sala.numero.asc()).all()
+
+    resposta = []
+
+    for sala in salas:
+        estado = (
+            db.query(EstadoAtualSala)
+            .filter(EstadoAtualSala.sala_id == sala.id_sala)
+            .first()
+        )
+
+        evento_ativo = (
+            db.query(Evento)
+            .filter(
+                Evento.sala_id == sala.id_sala,
+                Evento.status.in_(["ativo", "encerrando"]),
+            )
+            .order_by(Evento.inicio_real.desc())
+            .first()
+        )
+
+        porta_aberta = estado.porta_aberta if estado else None
+
+        if porta_aberta is None:
+            status_visual = "Sem leitura"
+            nivel = "offline"
+        elif evento_ativo and porta_aberta:
+            status_visual = "Em uso / porta aberta"
+            nivel = "ocupada"
+        elif evento_ativo and not porta_aberta:
+            status_visual = "Em uso / porta fechada"
+            nivel = "ocupada"
+        elif not evento_ativo and porta_aberta:
+            status_visual = "Aberta sem evento"
+            nivel = "alerta"
+        else:
+            status_visual = "Livre / porta fechada"
+            nivel = "livre"
+
+        resposta.append({
+            "sala_id": sala.id_sala,
+            "numero": sala.numero,
+            "nome": getattr(sala, "nome", None),
+            "porta_aberta": porta_aberta,
+            "tem_evento_ativo": evento_ativo is not None,
+            "evento_id": evento_ativo.id_evento if evento_ativo else None,
+            "evento_tipo": evento_ativo.tipo if evento_ativo else None,
+            "status_evento": evento_ativo.status if evento_ativo else None,
+            "status_visual": status_visual,
+            "nivel": nivel,
+            "atualizado_em": (
+                estado.atualizado_em.isoformat()
+                if estado and estado.atualizado_em
+                else None
+            ),
+        })
+
+    return resposta

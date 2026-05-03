@@ -1,5 +1,6 @@
 from pydantic import BaseModel, EmailStr, Field
 from typing import Optional, Literal
+from datetime import datetime
 
 
 class LoginForm(BaseModel):
@@ -12,7 +13,6 @@ class UsuarioCreate(BaseModel):
     tipo: str
     email: EmailStr
     senha: str = Field(min_length=6)
-
 
 class UsuarioOut(BaseModel):
     id_usuario: int
@@ -61,3 +61,11 @@ class CadernoFinalPayload(BaseModel):
     device_id: str
     room_id: str
     participantes: list[ParticipantePayload]
+
+class EstadoPortaPayload(BaseModel):
+    sala_id: int
+    porta_aberta: bool
+    timestamp: datetime | None = None
+
+class ConfirmarComandoPayload(BaseModel):
+    comando_id: int

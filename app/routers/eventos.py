@@ -23,10 +23,11 @@ from app.models import (
     Materia,
     Professor,
     TurmaMateriaProfessor,
-    EventoRelacao
+    EventoRelacao,
+    EstadoAtualSala
 )
 
-from app.schemas import TagAuthRequest, CadernoFinalPayload
+from app.schemas import TagAuthRequest, CadernoFinalPayload, ConfirmarComandoPayload, EstadoPortaPayload
 from app.security import verify_password
 
 router = APIRouter(prefix="/eventos", tags=["eventos"])
@@ -39,10 +40,6 @@ TOLERANCIA_FIM = timedelta(minutes=15)
 def agora() -> datetime:
     # Mantém o padrão atual do projeto: datas naive/local.
     return datetime.now()
-
-
-class ConfirmarComandoPayload(BaseModel):
-    comando_id: int
 
 
 def normalizar_uid(uid: str) -> str:
@@ -1541,3 +1538,54 @@ def confirmar_comando(
     db.commit()
 
     return {"ok": True}
+
+# recebe o payload da porta do reed switch
+@router.post("/api/dispositivo/{device_id}/estado-porta")
+def registrar_estado_porta(
+    device_id: str,
+    payload: EstadoPortaPayload,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    dispositivo = autenticar_dispositivo(
+        db=db,
+        device_id=device_id,
+        device_secret=request.headers.get("X-Device-Secret"),
+    )
+
+    if dispositivo.sala_id != payload.sala_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Dispositivo não pertence à sala informada.",
+        )
+
+    estado = (
+        db.query(EstadoAtualSala)
+        .filter(EstadoAtualSala.sala_id == payload.sala_id)
+        .first()
+    )
+
+    momento = payload.timestamp or agora()
+
+    if not estado:
+        estado = EstadoAtualSala(
+            sala_id=payload.sala_id,
+            porta_aberta=payload.porta_aberta,
+            atualizado_em=momento,
+        )
+        db.add(estado)
+    else:
+        estado.porta_aberta = payload.porta_aberta
+        estado.atualizado_em = momento
+
+    dispositivo.ultima_comunicacao = agora()
+
+    db.commit()
+
+    return {
+        "ok": True,
+        "device_id": device_id,
+        "sala_id": payload.sala_id,
+        "porta_aberta": payload.porta_aberta,
+        "atualizado_em": momento,
+    }

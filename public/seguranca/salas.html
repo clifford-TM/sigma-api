@@ -43,6 +43,21 @@
             background: white;
             border-radius: 8px;
         }
+
+        .porta-aberta {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .porta-fechada {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        .porta-sem-leitura {
+            color: #777;
+            font-weight: bold;
+        }
     </style>
 </head>
 <body>
@@ -72,12 +87,34 @@
                 {% endfor %}
             {% endif %}
 
-            <div class="card-sala {{ classe }}">
+            <div class="card-sala {{ classe }}" id="sala-{{ sala.id_sala }}">
                 <h2>{{ sala.numero }}</h2>
 
                 <p>
                     <strong>Tipo:</strong>
                     {{ sala.tipo }}
+                </p>
+
+                <p>
+                    <strong>Porta:</strong>
+                    <span id="porta-{{ sala.id_sala }}">
+                        {% if sala.id_sala in estados_por_sala %}
+                            {% if estados_por_sala[sala.id_sala].porta_aberta %}
+                                Aberta
+                            {% else %}
+                                Fechada
+                            {% endif %}
+                        {% else %}
+                            Sem leitura
+                        {% endif %}
+                    </span>
+                </p>
+
+                <p>
+                    <strong>Status geral:</strong>
+                    <span id="status-{{ sala.id_sala }}">
+                        {{ classe }}
+                    </span>
                 </p>
 
                 {% if sala.id_sala in eventos_por_sala %}
@@ -120,5 +157,70 @@
 
         {% endfor %}
     </div>
+
+    <script>
+        function atualizarTextoPorta(elemento, portaAberta) {
+            elemento.classList.remove("porta-aberta", "porta-fechada", "porta-sem-leitura");
+
+            if (portaAberta === null) {
+                elemento.innerText = "Sem leitura";
+                elemento.classList.add("porta-sem-leitura");
+                return;
+            }
+
+            if (portaAberta) {
+                elemento.innerText = "Aberta";
+                elemento.classList.add("porta-aberta");
+            } else {
+                elemento.innerText = "Fechada";
+                elemento.classList.add("porta-fechada");
+            }
+        }
+
+        async function atualizarSalas() {
+            try {
+                const response = await fetch("/seguranca/api/salas/status");
+
+                if (!response.ok) {
+                    console.error("Erro HTTP ao atualizar salas:", response.status);
+                    return;
+                }
+
+                const data = await response.json();
+
+                data.forEach(sala => {
+                    const portaEl = document.getElementById(`porta-${sala.sala_id}`);
+                    if (portaEl) {
+                        atualizarTextoPorta(portaEl, sala.porta_aberta);
+                    }
+
+                    const statusEl = document.getElementById(`status-${sala.sala_id}`);
+                    if (statusEl) {
+                        statusEl.innerText = sala.status_visual;
+                    }
+
+                    const card = document.getElementById(`sala-${sala.sala_id}`);
+                    if (card) {
+                        card.classList.remove("livre", "ocupada", "inspecao", "problema");
+
+                        if (sala.nivel === "livre") {
+                            card.classList.add("livre");
+                        } else if (sala.nivel === "ocupada") {
+                            card.classList.add("ocupada");
+                        } else if (sala.nivel === "inspecao") {
+                            card.classList.add("inspecao");
+                        } else {
+                            card.classList.add("problema");
+                        }
+                    }
+                });
+            } catch (err) {
+                console.error("Erro ao atualizar salas:", err);
+            }
+        }
+
+        setInterval(atualizarSalas, 5000);
+        atualizarSalas();
+    </script>
 </body>
 </html>
