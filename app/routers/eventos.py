@@ -5,7 +5,6 @@ import re
 from fastapi import APIRouter, Depends, Form, HTTPException, Request, status, Header
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
-from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from app.db import get_db
@@ -146,6 +145,7 @@ def carregar_alocacoes_professor(db: Session, current_user: Usuario) -> list[dic
         }
         for _, turma, curso, materia in alocacoes
     ]
+
 
 def template_lista_eventos() -> str:
     return "eventos/eventos-lista.html"
@@ -385,8 +385,31 @@ def sincronizar_eventos(db: Session) -> dict:
         "comandos_cancelados": comandos_cancelados_total,
     }
 
+
 def usuario_pode_operar_evento(usuario: Usuario, evento: Evento) -> bool:
     return evento.host == usuario.id_usuario or usuario.tipo == "seguranca"
+
+def existe_conflito_evento(
+    db: Session,
+    sala_id: int,
+    inicio_dt: datetime,
+    fim_dt: datetime,
+    ignorar_evento_id: int | None = None,
+) -> Evento | None:
+    query = (
+        db.query(Evento)
+        .filter(
+            Evento.sala_id == sala_id,
+            Evento.status.in_(["pendente_aprovacao", "agendado", "ativo", "pendente"]),
+            Evento.inicio_previsto < fim_dt,
+            Evento.fim_previsto > inicio_dt,
+        )
+    )
+
+    if ignorar_evento_id is not None:
+        query = query.filter(Evento.id_evento != ignorar_evento_id)
+
+    return query.first()
 
 @router.get("")
 def listar_eventos_usuario(
@@ -396,6 +419,8 @@ def listar_eventos_usuario(
 ):
     sincronizar_eventos(db)
 
+    mensagem = request.query_params.get("mensagem")
+    
     eventos = (
         db.query(Evento)
         .filter(Evento.host == current_user.id_usuario)
@@ -418,6 +443,7 @@ def listar_eventos_usuario(
             "projetos": eventos,
             "salas": salas,
             "professores": professores,
+            "mensagem": mensagem,
         },
     )
 
@@ -627,15 +653,11 @@ def criar_evento(
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-    conflito = (
-        db.query(Evento)
-        .filter(
-            Evento.sala_id == sala_id,
-            Evento.status.in_(["pendente_aprovacao", "agendado", "ativo", "pendente"]),
-            Evento.inicio_previsto < fim_dt,
-            Evento.fim_previsto > inicio_dt,
-        )
-        .first()
+    conflito = existe_conflito_evento(
+        db=db,
+        sala_id=sala_id,
+        inicio_dt=inicio_dt,
+        fim_dt=fim_dt,
     )
 
     if conflito:
@@ -678,6 +700,162 @@ def criar_evento(
         status_code=status.HTTP_303_SEE_OTHER,
     )
 
+
+@router.get("/recorrente/novo")
+def formulario_evento_recorrente(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    salas = db.query(Sala).order_by(Sala.numero.asc()).all()
+    tipos_permitidos = tipos_permitidos_para_usuario(current_user.tipo)
+
+    tipo = request.query_params.get("tipo", "")
+
+    if tipo not in tipos_permitidos:
+        tipo = tipos_permitidos[0] if len(tipos_permitidos) == 1 else ""
+
+    if tipo not in ["limpeza", "manutencao", "inspecao"]:
+        return RedirectResponse(
+            url="/eventos/novo",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    return templates.TemplateResponse(
+        request=request,
+        name="eventos/evento-recorrente.html",
+        context={
+            "usuario": current_user,
+            "erro": None,
+            "valores": {"tipo": tipo},
+            "salas": salas,
+        },
+    )
+
+
+@router.post("/recorrente")
+def criar_eventos_recorrentes(
+    request: Request,
+    tipo: str = Form(...),
+    sala_id: int = Form(...),
+    descricao: str = Form(""),
+    data_inicio: str = Form(...),
+    data_fim: str = Form(...),
+    hora_inicio: str = Form(...),
+    hora_fim: str = Form(...),
+    dias_semana: list[int] = Form(...),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    tipos_permitidos = tipos_permitidos_para_usuario(current_user.tipo)
+
+    if tipo not in tipos_permitidos:
+        raise HTTPException(
+            status_code=403,
+            detail="Tipo de evento inválido para este usuário.",
+        )
+
+    if tipo not in ["limpeza", "manutencao", "inspecao"]:
+        raise HTTPException(
+            status_code=400,
+            detail="Criação recorrente disponível apenas para eventos operacionais.",
+        )
+
+    sala = db.query(Sala).filter(Sala.id_sala == sala_id).first()
+    if not sala:
+        raise HTTPException(
+            status_code=404,
+            detail="Sala não encontrada.",
+        )
+
+    try:
+        data_ini = datetime.fromisoformat(data_inicio).date()
+        data_fim_dt = datetime.fromisoformat(data_fim).date()
+
+        hora_ini = datetime.strptime(hora_inicio, "%H:%M").time()
+        hora_fim_dt = datetime.strptime(hora_fim, "%H:%M").time()
+    except ValueError:
+        raise HTTPException(
+            status_code=400,
+            detail="Datas ou horários inválidos.",
+        )
+
+    if data_fim_dt < data_ini:
+        raise HTTPException(
+            status_code=400,
+            detail="A data final deve ser posterior ou igual à data inicial.",
+        )
+
+    if hora_fim_dt <= hora_ini:
+        raise HTTPException(
+            status_code=400,
+            detail="O horário de término deve ser posterior ao horário de início.",
+        )
+
+    dias_semana = [int(dia) for dia in dias_semana]
+
+    criados = 0
+    ignorados = []
+
+    data_atual = data_ini
+
+    while data_atual <= data_fim_dt:
+        # weekday(): segunda=0, terça=1, ..., domingo=6
+        if data_atual.weekday() in dias_semana:
+            inicio_dt = datetime.combine(data_atual, hora_ini)
+            fim_dt = datetime.combine(data_atual, hora_fim_dt)
+
+            if inicio_dt < agora():
+                ignorados.append({
+                    "data": data_atual.strftime("%d/%m/%Y"),
+                    "motivo": "data/horário já passou",
+                })
+                data_atual += timedelta(days=1)
+                continue
+
+            conflito = existe_conflito_evento(
+                db=db,
+                sala_id=sala_id,
+                inicio_dt=inicio_dt,
+                fim_dt=fim_dt,
+            )
+
+            if conflito:
+                ignorados.append({
+                    "data": data_atual.strftime("%d/%m/%Y"),
+                    "motivo": f"conflito com evento #{conflito.id_evento}",
+                })
+                data_atual += timedelta(days=1)
+                continue
+
+            evento = Evento(
+                tipo=tipo,
+                host=current_user.id_usuario,
+                autorizado_por=None,
+                forma_inicio="app",
+                confirmado_por_rfid=False,
+                sala_id=sala_id,
+                status="agendado",
+                descricao=descricao.strip() if descricao.strip() else None,
+                inicio_previsto=inicio_dt,
+                fim_previsto=fim_dt,
+                inicio_real=None,
+                fim_real=None,
+            )
+
+            db.add(evento)
+            criados += 1
+
+        data_atual += timedelta(days=1)
+
+    db.commit()
+
+    resumo = f"Eventos recorrentes processados. Criados: {criados}. Ignorados: {len(ignorados)}."
+
+    return RedirectResponse(
+        url=f"/eventos?mensagem={resumo}",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
 
 @router.get("/{evento_id}/editar")
 def formulario_editar_evento(
@@ -830,16 +1008,12 @@ def atualizar_evento(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    conflito = (
-        db.query(Evento)
-        .filter(
-            Evento.id_evento != evento.id_evento,
-            Evento.sala_id == sala_id,
-            Evento.status.in_(["pendente_aprovacao", "agendado", "ativo", "pendente"]),
-            Evento.inicio_previsto < fim_dt,
-            Evento.fim_previsto > inicio_dt,
-        )
-        .first()
+    conflito = existe_conflito_evento(
+        db=db,
+        sala_id=sala_id,
+        inicio_dt=inicio_dt,
+        fim_dt=fim_dt,
+        ignorar_evento_id=evento.id_evento,
     )
 
     if conflito:
@@ -850,7 +1024,7 @@ def atualizar_evento(
             context=context,
             status_code=status.HTTP_400_BAD_REQUEST,
         )
-
+    
     evento.sala_id = sala_id
     evento.descricao = descricao if descricao else None
     evento.inicio_previsto = inicio_dt
@@ -973,7 +1147,6 @@ def cancelar_evento(
         url=rota_lista_por_tipo(current_user.tipo),
         status_code=status.HTTP_303_SEE_OTHER,
     )
-
 
 @router.post("/{evento_id}/iniciar")
 def iniciar_evento(

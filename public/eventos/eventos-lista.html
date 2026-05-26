@@ -55,13 +55,19 @@
   </head>
 
   <body>
-    <h1>
+   <h1>
       {% if usuario.tipo == "aluno" %}
         Meus projetos
       {% else %}
         Meus eventos
       {% endif %}
     </h1>
+
+    {% if mensagem %}
+      <p style="color: green;">
+        {{ mensagem }}
+      </p>
+    {% endif %}
 
     <p>Bem-vindo, {{ usuario.nome }}</p>
 
