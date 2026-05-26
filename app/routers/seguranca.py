@@ -2,16 +2,22 @@
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Request, status, HTTPException
+from fastapi import (APIRouter, Depends, Request, 
+                     status, HTTPException, Form)
 from fastapi.responses import RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
+from zoneinfo import ZoneInfo
+from sqlalchemy.exc import IntegrityError
 
 from app.db import get_db
 from app.deps import get_current_user
-from app.models import Evento, Sala, Usuario, EventoRelacao, EstadoAtualSala, EventoParticipante, Presenca
+from app.models import (Evento, Sala, Usuario, EventoRelacao, 
+                        EstadoAtualSala, EventoParticipante, 
+                        Presenca, RFIDTag, Ocorrencia)
 from datetime import datetime, time
+import re
 
 router = APIRouter(prefix="/seguranca", tags=["seguranca"])
 templates = Jinja2Templates(directory="public")
@@ -588,4 +594,425 @@ def auditoria_evento_detalhe(
             "linha_do_tempo": linha_do_tempo,
             "alertas": alertas,
         },
+    )
+
+@router.get("/rfid")
+def listar_alunos_rfid(
+    request: Request,
+    busca: str | None = None,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not usuario_eh_seguranca(current_user):
+        return RedirectResponse(
+            url="/login",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    query = (
+        db.query(Usuario)
+        .filter(Usuario.tipo == "aluno")
+        .order_by(Usuario.nome.asc())
+    )
+
+    if busca:
+        termo = f"%{busca.strip()}%"
+        query = query.filter(
+            or_(
+                Usuario.nome.ilike(termo),
+                Usuario.email.ilike(termo),
+            )
+        )
+
+    alunos = query.all()
+
+    tags_ativas = (
+        db.query(RFIDTag)
+        .filter(RFIDTag.ativa == True)
+        .all()
+    )
+
+    tags_por_usuario = {
+        tag.usuario_id: tag
+        for tag in tags_ativas
+    }
+
+    return templates.TemplateResponse(
+        "seguranca/rfid-lista.html",
+        {
+            "request": request,
+            "usuario": current_user,
+            "alunos": alunos,
+            "tags_por_usuario": tags_por_usuario,
+            "busca": busca or "",
+        },
+    )
+
+@router.get("/rfid/{usuario_id}")
+def editar_rfid_usuario(
+    usuario_id: int,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not usuario_eh_seguranca(current_user):
+        return RedirectResponse(
+            url="/login",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    usuario = (
+        db.query(Usuario)
+        .filter(
+            Usuario.id_usuario == usuario_id,
+            Usuario.tipo == "aluno",
+        )
+        .first()
+    )
+
+    if not usuario:
+        return RedirectResponse(
+            url="/usuarios/",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    tag_ativa = (
+        db.query(RFIDTag)
+        .filter(
+            RFIDTag.usuario_id == usuario.id_usuario,
+            RFIDTag.ativa == True,
+        )
+        .order_by(RFIDTag.emitida_em.desc())
+        .first()
+    )
+
+    return templates.TemplateResponse(
+        "seguranca/rfid-form.html",
+        {
+            "request": request,
+            "usuario": current_user,
+            "aluno": usuario,
+            "tag_ativa": tag_ativa,
+            "erro": None,
+        },
+    )
+
+@router.post("/rfid/{usuario_id}")
+async def substituir_rfid(
+    usuario_id: int,
+    request: Request,
+    nova_tag: str = Form(...),
+    motivo: str = Form("Substituição autorizada pela segurança"),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not usuario_eh_seguranca(current_user):
+        return RedirectResponse(
+            url="/login",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    aluno = (
+        db.query(Usuario)
+        .filter(
+            Usuario.id_usuario == usuario_id,
+            Usuario.tipo == "aluno",
+        )
+        .first()
+    )
+
+    if not aluno:
+        return RedirectResponse(
+            url="/seguranca/rfid",
+            status_code=status.HTTP_303_SEE_OTHER,
+        )
+
+    nova_tag = nova_tag.strip().upper()
+    motivo = motivo.strip()
+
+    tag_ativa = (
+        db.query(RFIDTag)
+        .filter(
+            RFIDTag.usuario_id == aluno.id_usuario,
+            RFIDTag.ativa == True,
+        )
+        .order_by(RFIDTag.emitida_em.desc())
+        .first()
+    )
+
+    def render_erro(msg):
+        return templates.TemplateResponse(
+            "seguranca/rfid-form.html",
+            {
+                "request": request,
+                "usuario": current_user,
+                "aluno": aluno,
+                "tag_ativa": tag_ativa,
+                "erro": msg,
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    HEX_RE = re.compile(r"^[0-9A-F]{8,24}$")
+
+    if not HEX_RE.match(nova_tag):
+        return render_erro(
+            "Código RFID inválido."
+        )
+
+    agora = datetime.now(
+        ZoneInfo("America/Sao_Paulo")
+    ).replace(tzinfo=None)
+
+    tag_existente = (
+        db.query(RFIDTag)
+        .filter(
+            RFIDTag.codigo == nova_tag
+        )
+        .first()
+    )
+
+    if tag_existente:
+
+        if tag_existente.usuario_id != aluno.id_usuario:
+            return render_erro(
+                "Essa TAG já pertence a outro usuário."
+            )
+
+        if tag_existente.ativa:
+            return render_erro(
+                "Essa TAG já está ativa para este aluno."
+            )
+
+    tags_ativas = (
+        db.query(RFIDTag)
+        .filter(
+            RFIDTag.usuario_id == aluno.id_usuario,
+            RFIDTag.ativa == True,
+        )
+        .all()
+    )
+
+    for tag in tags_ativas:
+        tag.ativa = False
+        tag.desativada_em = agora
+        tag.motivo_desativacao = (
+            f"{motivo} | Segurança: {current_user.nome}"
+        )
+
+    if tag_existente:
+
+        tag_existente.ativa = True
+        tag_existente.emitida_em = agora
+        tag_existente.desativada_em = None
+        tag_existente.motivo_desativacao = None
+
+    else:
+
+        db.add(
+            RFIDTag(
+                usuario_id=aluno.id_usuario,
+                codigo=nova_tag,
+                ativa=True,
+                emitida_em=agora,
+            )
+        )
+
+    try:
+        db.commit()
+
+    except IntegrityError:
+
+        db.rollback()
+
+        return render_erro(
+            "Falha ao substituir RFID."
+        )
+
+    return RedirectResponse(
+        url=f"/seguranca/rfid/{aluno.id_usuario}",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+@router.get("/ocorrencias")
+def listar_ocorrencias(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not usuario_eh_seguranca(current_user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    ocorrencias = (
+        db.query(Ocorrencia)
+        .order_by(Ocorrencia.data_ocorrencia.desc())
+        .all()
+    )
+
+    eventos = {e.id_evento: e for e in db.query(Evento).all()}
+    salas = {s.id_sala: s for s in db.query(Sala).all()}
+    usuarios = {u.id_usuario: u for u in db.query(Usuario).all()}
+
+    return templates.TemplateResponse(
+        "seguranca/ocorrencias-lista.html",
+        {
+            "request": request,
+            "usuario": current_user,
+            "ocorrencias": ocorrencias,
+            "eventos": eventos,
+            "salas": salas,
+            "usuarios": usuarios,
+        },
+    )
+
+
+@router.get("/ocorrencias/nova")
+def nova_ocorrencia_form(
+    request: Request,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not usuario_eh_seguranca(current_user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    eventos = (
+        db.query(Evento)
+        .filter(
+            Evento.status.in_([
+                "ativo",
+                "encerrando",
+                "finalizado",
+                "nao_realizado",
+                "cancelado",
+            ])
+        )
+        .order_by(Evento.inicio_previsto.desc())
+        .limit(100)
+        .all()
+    )
+    salas = db.query(Sala).order_by(Sala.numero.asc()).all()
+
+    return templates.TemplateResponse(
+        "seguranca/ocorrencia-form.html",
+        {
+            "request": request,
+            "usuario": current_user,
+            "eventos": eventos,
+            "salas": salas,
+            "erro": None,
+        },
+    )
+
+
+@router.post("/ocorrencias")
+def criar_ocorrencia(
+    request: Request,
+    tipo: str = Form(...),
+    descricao: str = Form(...),
+    severidade: str = Form("media"),
+    evento_id: int | None = Form(None),
+    sala_id: int | None = Form(None),
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not usuario_eh_seguranca(current_user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    tipo = tipo.strip()
+    descricao = descricao.strip()
+    severidade = severidade.strip() if severidade else "media"
+
+    eventos = (
+        db.query(Evento)
+        .filter(
+            Evento.status.in_([
+                "ativo",
+                "encerrando",
+                "finalizado",
+                "nao_realizado",
+                "cancelado",
+            ])
+        )
+        .order_by(Evento.inicio_previsto.desc())
+        .limit(100)
+        .all()
+    )
+    salas = db.query(Sala).order_by(Sala.numero.asc()).all()
+
+    def render_erro(msg: str):
+        return templates.TemplateResponse(
+            "seguranca/ocorrencia-form.html",
+            {
+                "request": request,
+                "usuario": current_user,
+                "eventos": eventos,
+                "salas": salas,
+                "erro": msg,
+            },
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if not tipo:
+        return render_erro("Informe o tipo da ocorrência.")
+
+    if not descricao:
+        return render_erro("Informe a descrição/relatório da ocorrência.")
+
+    if severidade not in ["baixa", "media", "alta"]:
+        return render_erro("Severidade inválida.")
+
+    if evento_id == 0:
+        evento_id = None
+
+    if sala_id == 0:
+        sala_id = None
+
+    agora = datetime.now(ZoneInfo("America/Sao_Paulo")).replace(tzinfo=None)
+
+    ocorrencia = Ocorrencia(
+        evento_id=evento_id,
+        sala_id=sala_id,
+        registrada_por=current_user.id_usuario,
+        tipo=tipo,
+        descricao=descricao,
+        data_ocorrencia=agora,
+        severidade=severidade,
+        resolvida=False,
+    )
+
+    db.add(ocorrencia)
+    db.commit()
+
+    return RedirectResponse(
+        url="/seguranca/ocorrencias",
+        status_code=status.HTTP_303_SEE_OTHER,
+    )
+
+
+@router.post("/ocorrencias/{ocorrencia_id}/resolver")
+def resolver_ocorrencia(
+    ocorrencia_id: int,
+    db: Session = Depends(get_db),
+    current_user: Usuario = Depends(get_current_user),
+):
+    if not usuario_eh_seguranca(current_user):
+        return RedirectResponse(url="/login", status_code=status.HTTP_303_SEE_OTHER)
+
+    ocorrencia = (
+        db.query(Ocorrencia)
+        .filter(Ocorrencia.id_ocorrencia == ocorrencia_id)
+        .first()
+    )
+
+    if ocorrencia:
+        ocorrencia.resolvida = True
+        ocorrencia.resolvida_em = datetime.now(
+            ZoneInfo("America/Sao_Paulo")
+        ).replace(tzinfo=None)
+
+        db.commit()
+
+    return RedirectResponse(
+        url="/seguranca/ocorrencias",
+        status_code=status.HTTP_303_SEE_OTHER,
     )

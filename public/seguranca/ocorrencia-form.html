@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Nova Ocorrência</title>
+</head>
+
+<body>
+
+<h1>Registrar Ocorrência</h1>
+
+<p>Operador: {{ usuario.nome }}</p>
+
+<nav>
+    <a href="/seguranca/dashboard">Dashboard</a> |
+    <a href="/seguranca/ocorrencias">Ocorrências</a> |
+    <a href="/logout">Sair</a>
+</nav>
+
+<hr>
+
+{% if erro %}
+<div style="color:red">
+{{ erro }}
+</div>
+<hr>
+{% endif %}
+
+<form method="POST" action="/seguranca/ocorrencias">
+
+<label>Tipo</label>
+<br>
+
+<select name="tipo" required>
+<option value="">Selecione</option>
+
+<option value="chave_nao_devolvida">
+Chave não devolvida
+</option>
+
+<option value="ambiente_irregular">
+Ambiente irregular
+</option>
+
+<option value="sala_aberta">
+Sala aberta sem evento
+</option>
+
+<option value="encerramento_contingencia">
+Encerramento por contingência
+</option>
+
+<option value="observacao">
+Observação
+</option>
+
+<option value="outro">
+Outro
+</option>
+
+</select>
+
+<br><br>
+
+<label>Evento (opcional)</label>
+<br>
+
+<select name="evento_id">
+
+<option value="0">
+Nenhum
+</option>
+
+{% for evento in eventos %}
+
+<option value="{{ evento.id_evento }}">
+    #{{ evento.id_evento }}
+    —
+    {{ evento.tipo }}
+    —
+    {{ evento.status }}
+    —
+    Sala {{ evento.sala_id }}
+    —
+    {{ evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") if evento.inicio_previsto else "sem data" }}
+</option>
+
+{% endfor %}
+
+</select>
+
+<br><br>
+
+<label>Sala (opcional)</label>
+<br>
+
+<select name="sala_id">
+
+<option value="0">
+Nenhuma
+</option>
+
+{% for sala in salas %}
+
+<option value="{{ sala.id_sala }}">
+Sala {{ sala.numero }}
+</option>
+
+{% endfor %}
+
+</select>
+
+<br><br>
+
+<label>Severidade</label>
+
+<br>
+
+<select name="severidade">
+
+<option value="baixa">
+Baixa
+</option>
+
+<option value="media" selected>
+Média
+</option>
+
+<option value="alta">
+Alta
+</option>
+
+</select>
+
+<br><br>
+
+<label>Descrição / Relatório</label>
+
+<br>
+
+<textarea
+name="descricao"
+rows="10"
+cols="80"
+required
+placeholder="Descreva a ocorrência ou relatório operacional..."
+></textarea>
+
+<br><br>
+
+<button type="submit">
+Registrar ocorrência
+</button>
+
+</form>
+
+</body>
+</html>

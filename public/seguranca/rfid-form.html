@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Substituição RFID</title>
+</head>
+
+<body>
+
+<h1>Substituição de RFID</h1>
+
+<p>Operador: {{ usuario.nome }}</p>
+
+<nav>
+    <a href="/seguranca/dashboard">Dashboard</a> |
+    <a href="/seguranca/rfid">Voltar</a> |
+    <a href="/logout">Sair</a>
+</nav>
+
+<hr>
+
+{% if erro %}
+<div style="color:red">
+    {{ erro }}
+</div>
+<hr>
+{% endif %}
+
+<h2>Dados do aluno</h2>
+
+<form method="POST">
+
+<label>Nome</label><br>
+<input
+type="text"
+value="{{ aluno.nome }}"
+readonly
+>
+<br><br>
+
+<label>Email</label><br>
+<input
+type="text"
+value="{{ aluno.email }}"
+readonly
+>
+<br><br>
+
+<label>Tipo</label><br>
+<input
+type="text"
+value="{{ aluno.tipo }}"
+readonly
+>
+<br><br>
+
+<label>Tag atual</label><br>
+
+<input
+type="text"
+value="{{ tag_ativa.codigo if tag_ativa else 'SEM TAG ATIVA' }}"
+readonly
+>
+
+{% if tag_ativa %}
+<br>
+<small>
+Emitida em:
+{{ tag_ativa.emitida_em.strftime("%d/%m/%Y %H:%M") }}
+</small>
+{% endif %}
+
+<br><br>
+
+<hr>
+
+<h2>Nova identificação</h2>
+
+<label>Nova TAG RFID</label><br>
+
+<input
+name="nova_tag"
+type="text"
+maxlength="24"
+required
+placeholder="Ex.: A1B2C3D4"
+/>
+
+<br><br>
+
+<label>Motivo</label><br>
+
+<textarea
+name="motivo"
+rows="4"
+cols="60"
+placeholder="Perda, extravio, substituição..."
+>
+Substituição autorizada pela segurança
+</textarea>
+
+<br><br>
+
+<button type="submit">
+Substituir TAG
+</button>
+
+</form>
+
+</body>
+</html>

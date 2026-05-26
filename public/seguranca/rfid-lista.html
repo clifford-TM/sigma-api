@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Substituição RFID</title>
+</head>
+<body>
+    <h1>Substituição de RFID</h1>
+
+    <p>Operador: {{ usuario.nome }}</p>
+
+    <nav>
+        <a href="/seguranca/dashboard">Dashboard</a> |
+        <a href="/seguranca/salas">Visão Geral das Salas</a> |
+        <a href="/seguranca/validacoes">Validações</a> |
+        <a href="/seguranca/auditoria">Auditoria de eventos</a> |
+        <a href="/logout">Sair</a>
+    </nav>
+
+    <hr>
+
+    <h2>Buscar aluno</h2>
+
+    <form method="GET" action="/seguranca/rfid">
+        <input
+            type="text"
+            name="busca"
+            value="{{ busca }}"
+            placeholder="Nome ou email do aluno"
+        >
+
+        <button type="submit">Buscar</button>
+
+        {% if busca %}
+            <a href="/seguranca/rfid">Limpar</a>
+        {% endif %}
+    </form>
+
+    <hr>
+
+    <h2>Alunos</h2>
+
+    {% if alunos %}
+        <table border="1" cellpadding="6" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>Nome</th>
+                    <th>Email</th>
+                    <th>TAG ativa</th>
+                    <th>Ação</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for aluno in alunos %}
+                    {% set tag = tags_por_usuario.get(aluno.id_usuario) %}
+                    <tr>
+                        <td>{{ aluno.nome }}</td>
+                        <td>{{ aluno.email }}</td>
+                        <td>
+                            {% if tag %}
+                                {{ tag.codigo }}
+                            {% else %}
+                                Sem TAG ativa
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="/seguranca/rfid/{{ aluno.id_usuario }}">
+                                Substituir TAG
+                            </a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>Nenhum aluno encontrado.</p>
+    {% endif %}
+</body>
+</html>

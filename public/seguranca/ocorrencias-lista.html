@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Ocorrências</title>
+</head>
+
+<body>
+
+<h1>Ocorrências Operacionais</h1>
+
+<p>Operador: {{ usuario.nome }}</p>
+
+<nav>
+
+<a href="/seguranca/dashboard">
+Dashboard
+</a>
+
+|
+
+<a href="/seguranca/ocorrencias/nova">
+Nova ocorrência
+</a>
+
+|
+
+<a href="/logout">
+Sair
+</a>
+
+</nav>
+
+<hr>
+
+{% if ocorrencias %}
+
+<table border="1" cellpadding="8">
+
+<thead>
+
+<tr>
+
+<th>ID</th>
+
+<th>Data</th>
+
+<th>Tipo</th>
+
+<th>Sala</th>
+
+<th>Evento</th>
+
+<th>Severidade</th>
+
+<th>Status</th>
+
+<th>Descrição</th>
+
+<th>Ação</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+{% for o in ocorrencias %}
+
+<tr>
+
+<td>
+
+{{ o.id_ocorrencia }}
+
+</td>
+
+<td>
+
+{{ o.data_ocorrencia.strftime("%d/%m/%Y %H:%M") }}
+
+</td>
+
+<td>
+
+{{ o.tipo }}
+
+</td>
+
+<td>
+
+{% if o.sala_id %}
+Sala {{ salas[o.sala_id].numero }}
+{% else %}
+—
+{% endif %}
+
+</td>
+
+<td>
+
+{% if o.evento_id %}
+#{{ o.evento_id }}
+{% else %}
+—
+{% endif %}
+
+</td>
+
+<td>
+
+{{ o.severidade }}
+
+</td>
+
+<td>
+
+{% if o.resolvida %}
+
+Resolvida
+
+{% else %}
+
+Aberta
+
+{% endif %}
+
+</td>
+
+<td>
+
+{{ o.descricao }}
+
+</td>
+
+<td>
+
+{% if not o.resolvida %}
+
+<form
+method="POST"
+action="/seguranca/ocorrencias/{{ o.id_ocorrencia }}/resolver"
+>
+
+<button type="submit">
+
+Resolver
+
+</button>
+
+</form>
+
+{% endif %}
+
+</td>
+
+</tr>
+
+{% endfor %}
+
+</tbody>
+
+</table>
+
+{% else %}
+
+<p>
+
+Nenhuma ocorrência registrada.
+
+</p>
+
+{% endif %}
+
+</body>
+</html>
