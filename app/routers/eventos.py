@@ -109,7 +109,7 @@ def template_form_por_tipo(tipo: str) -> str:
         return "eventos/evento-projeto-form.html"
     if tipo in ["limpeza", "manutencao", "inspecao"]:
         return "eventos/evento-operacional-form.html"
-    return "eventos/evento-form.html"
+    raise ValueError(f"Tipo de evento inválido: {tipo}")
 
 
 def carregar_alocacoes_professor(db: Session, current_user: Usuario) -> list[dict]:
@@ -149,11 +149,6 @@ def carregar_alocacoes_professor(db: Session, current_user: Usuario) -> list[dic
 
 def template_lista_eventos() -> str:
     return "eventos/eventos-lista.html"
-
-
-def template_form_evento() -> str:
-    return "eventos/evento-form.html"
-
 
 def template_editar_evento() -> str:
     return "eventos/evento-editar-form.html"

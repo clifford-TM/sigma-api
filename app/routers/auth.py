@@ -49,10 +49,21 @@ def login_page(request: Request):
 @router.post("/login")
 def login(
     request: Request,
-    email: str = Form(...),
-    senha: str = Form(...),
+    email: str = Form(""),
+    senha: str = Form(""),
     db: Session = Depends(get_db),
 ):
+    email = email.strip()
+    senha = senha.strip()
+
+    if not email or not senha:
+        return templates.TemplateResponse(
+            request=request,
+            name="auth/login.html",
+            context={"erro": "Informe o e-mail e a senha para acessar o sistema."},
+            status_code=status.HTTP_400_BAD_REQUEST,
+        )
+
     user = db.query(Usuario).filter(Usuario.email == email).first()
 
     if not user or not verify_password(senha, user.senha):
