@@ -76,7 +76,7 @@ def dashboard_seguranca(
     usuarios = {usuario.id_usuario: usuario for usuario in db.query(Usuario).all()}
 
     return templates.TemplateResponse(
-        "seguranca/dashboard.html",
+        "seguranca/index.html",
         {
             "request": request,
             "usuario": current_user,
@@ -123,7 +123,7 @@ def visao_geral_salas(
     }
 
     return templates.TemplateResponse(
-        "seguranca/salas.html",
+        "seguranca/monitoramento-salas.html",
         {
             "request": request,
             "usuario": current_user,

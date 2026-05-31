@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Turmas - SIGMA</title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/list.css" />
+  <script src="/static/js/list.js" defer></script>
+</head>
+
+<body>
+  <div class="list-page">
+    <header class="list-header">
+      <div>
+        <p class="eyebrow">Administração acadêmica</p>
+
+        <h1>Turmas</h1>
+
+        <p class="subtitle">
+          Gerencie as turmas cadastradas e os professores responsáveis por matéria.
+        </p>
+      </div>
+
+      <div class="header-actions">
+        <a href="/admin/dashboard" class="secondary-button">
+          Dashboard
+        </a>
+
+        <a href="/turmas/nova" class="primary-button">
+          Nova turma
+        </a>
+      </div>
+    </header>
+
+    <section class="section-card">
+      {% if turmas %}
+        <div class="table-wrapper">
+          <table class="sigma-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Ano</th>
+                <th>Curso</th>
+                <th>Semestre</th>
+                <th>Período</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for turma in turmas %}
+                <tr>
+                  <td>#{{ turma.id_turma }}</td>
+                  <td>{{ turma.ano }}</td>
+                  <td>{{ mapa_cursos.get(turma.curso_id, "—") }}</td>
+                  <td>{{ turma.semestre }}º semestre</td>
+
+                  <td>
+                    <span class="status-badge status-agendado">
+                      {{ turma.periodo|capitalize }}
+                    </span>
+                  </td>
+
+                  <td>
+                    <div class="action-group">
+                      <a
+                        href="/turmas/{{ turma.id_turma }}/editar"
+                        class="secondary-button"
+                      >
+                        Editar
+                      </a>
+
+                      <a
+                        href="/turmas/{{ turma.id_turma }}/gerenciar"
+                        class="primary-button"
+                      >
+                        Gerenciar
+                      </a>
+
+                      <form
+                        method="post"
+                        action="/turmas/{{ turma.id_turma }}/excluir"
+                      >
+                        <button
+                          type="submit"
+                          class="danger-button"
+                          data-confirm="Deseja excluir esta turma?"
+                        >
+                          Excluir
+                        </button>
+                      </form>
+                    </div>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <h2>Nenhuma turma cadastrada</h2>
+          <p>Ainda não existem turmas registradas no sistema.</p>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+</body>
+</html>

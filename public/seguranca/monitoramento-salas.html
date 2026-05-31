@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Visão Geral das Salas - SIGMA</title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/salas-monitoramento.css" />
+  <script src="/static/js/salas-monitoramento.js" defer></script>
+</head>
+
+<body>
+  <div class="rooms-page">
+    <header class="rooms-header">
+      <div>
+        <p class="eyebrow">Segurança patrimonial</p>
+        <h1>Visão geral das salas</h1>
+        <p class="subtitle">
+          Acompanhe o estado dos ambientes, eventos ativos e leituras de porta em tempo quase real.
+        </p>
+      </div>
+
+      <div class="header-actions">
+        <a href="/seguranca/dashboard" class="secondary-button">Dashboard</a>
+        <a href="/seguranca/validacoes" class="secondary-button">Validações</a>
+        <a href="/eventos/novo?tipo=inspecao" class="primary-button">Nova inspeção</a>
+      </div>
+    </header>
+
+    <section class="rooms-legend">
+      <span><i class="dot livre"></i> Livre</span>
+      <span><i class="dot ocupada"></i> Ocupada</span>
+      <span><i class="dot inspecao"></i> Inspeção</span>
+      <span><i class="dot problema"></i> Atenção</span>
+    </section>
+
+    <section class="rooms-grid">
+      {% for sala in salas %}
+        {% set classe = "livre" %}
+
+        {% if sala.id_sala in eventos_por_sala %}
+          {% for evento in eventos_por_sala[sala.id_sala] %}
+            {% if evento.status == "aguardando_validacao" %}
+              {% set classe = "inspecao" %}
+            {% elif evento.status in ["ativo", "encerrando"] %}
+              {% set classe = "ocupada" %}
+            {% elif evento.status in ["agendado", "pendente"] %}
+              {% set classe = "problema" %}
+            {% endif %}
+          {% endfor %}
+        {% endif %}
+
+        <article
+          class="room-door {{ classe }}"
+          id="sala-{{ sala.id_sala }}"
+          data-sala-id="{{ sala.id_sala }}"
+        >
+          <div class="door-shape">
+            <div class="door-knob"></div>
+
+            <div class="room-main">
+              <span class="room-number">{{ sala.numero }}</span>
+              <span class="room-type">{{ sala.tipo|capitalize }}</span>
+            </div>
+
+            <div class="room-state">
+              <span
+                class="door-status"
+                id="porta-{{ sala.id_sala }}"
+              >
+                {% if sala.id_sala in estados_por_sala %}
+                  {% if estados_por_sala[sala.id_sala].porta_aberta %}
+                    Aberta
+                  {% else %}
+                    Fechada
+                  {% endif %}
+                {% else %}
+                  Sem leitura
+                {% endif %}
+              </span>
+
+              <span
+                class="general-status"
+                id="status-{{ sala.id_sala }}"
+              >
+                {{ classe }}
+              </span>
+            </div>
+          </div>
+
+          <div class="room-events">
+            {% if sala.id_sala in eventos_por_sala %}
+              {% for evento in eventos_por_sala[sala.id_sala] %}
+                <div class="room-event">
+                  <div class="event-topline">
+                    <strong>{{ evento.tipo|capitalize }}</strong>
+                    <span class="event-status">{{ evento.status }}</span>
+                  </div>
+
+                  <p>
+                    Responsável:
+                    {{ usuarios[evento.host].nome if evento.host in usuarios else "Desconhecido" }}
+                  </p>
+
+                  <p>
+                    {{ evento.inicio_previsto.strftime("%d/%m %H:%M") }}
+                    →
+                    {{ evento.fim_previsto.strftime("%H:%M") }}
+                  </p>
+
+                  {% if evento.status == "aguardando_validacao" %}
+                    <a
+                      href="/seguranca/validacoes/{{ evento.id_evento }}"
+                      class="primary-button full"
+                    >
+                      Fazer inspeção
+                    </a>
+                  {% elif evento.status == "ativo" %}
+                    <form
+                      method="post"
+                      action="/eventos/{{ evento.id_evento }}/disparar-fim-contingencia"
+                    >
+                      <button
+                        type="submit"
+                        class="danger-button full"
+                        data-confirm="Deseja encerrar este evento por contingência?"
+                      >
+                        Encerrar por contingência
+                      </button>
+                    </form>
+                  {% elif evento.status == "encerrando" %}
+                    <p class="muted-text">Encerramento em andamento...</p>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            {% else %}
+              <p class="room-free-text">Sala livre.</p>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </section>
+  </div>
+</body>
+</html>

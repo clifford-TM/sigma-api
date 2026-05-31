@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Usuários - SIGMA</title>
+  <title>Matérias - SIGMA</title>
 
   <link rel="stylesheet" href="/static/css/dashboard.css" />
   <link rel="stylesheet" href="/static/css/list.css" />
@@ -17,12 +17,12 @@
 
     <header class="list-header">
       <div>
-        <p class="eyebrow">Administração do sistema</p>
+        <p class="eyebrow">Administração acadêmica</p>
 
-        <h1>Usuários</h1>
+        <h1>Matérias</h1>
 
         <p class="subtitle">
-          Gerencie os usuários cadastrados e seus perfis de acesso.
+          Gerencie as matérias cadastradas e os professores vinculados.
         </p>
       </div>
 
@@ -35,17 +35,17 @@
         </a>
 
         <a
-          href="/usuarios/novo"
+          href="/materias/nova"
           class="primary-button"
         >
-          Novo usuário
+          Nova matéria
         </a>
       </div>
     </header>
 
     <section class="section-card">
 
-      {% if usuarios %}
+      {% if materias %}
 
         <div class="table-wrapper">
 
@@ -54,33 +54,55 @@
             <thead>
               <tr>
                 <th>ID</th>
+                <th>Código</th>
                 <th>Nome</th>
-                <th>Tipo</th>
-                <th>E-mail</th>
+                <th>Ações</th>
               </tr>
             </thead>
 
             <tbody>
 
-              {% for u in usuarios %}
+              {% for materia in materias %}
                 <tr>
 
                   <td>
-                    #{{ u.id_usuario }}
+                    #{{ materia.id_materia }}
                   </td>
 
                   <td>
-                    {{ u.nome }}
+                    {{ materia.codigo }}
                   </td>
 
                   <td>
-                    <span class="status-badge status-agendado">
-                      {{ u.tipo|capitalize }}
-                    </span>
+                    {{ materia.nome }}
                   </td>
 
                   <td>
-                    {{ u.email }}
+
+                    <div class="action-group">
+
+                      <a
+                        href="/materias/{{ materia.id_materia }}/editar"
+                        class="secondary-button"
+                      >
+                        Editar
+                      </a>
+
+                      <form
+                        method="post"
+                        action="/materias/{{ materia.id_materia }}/excluir"
+                      >
+                        <button
+                          type="submit"
+                          class="danger-button"
+                          data-confirm="Deseja excluir esta matéria?"
+                        >
+                          Excluir
+                        </button>
+                      </form>
+
+                    </div>
+
                   </td>
 
                 </tr>
@@ -96,10 +118,10 @@
 
         <div class="empty-state">
 
-          <h2>Nenhum usuário cadastrado</h2>
+          <h2>Nenhuma matéria cadastrada</h2>
 
           <p>
-            Ainda não existem usuários registrados no sistema.
+            Ainda não existem matérias registradas no sistema.
           </p>
 
         </div>

@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Grade curricular - SIGMA</title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/form.css" />
+  <link rel="stylesheet" href="/static/css/list.css" />
+  <link rel="stylesheet" href="/static/css/detail.css" />
+
+  <script src="/static/js/form.js" defer></script>
+  <script src="/static/js/list.js" defer></script>
+</head>
+
+<body>
+  <div class="detail-page">
+    <main class="detail-shell">
+      <header class="detail-header">
+        <div>
+          <p class="eyebrow">Grade curricular</p>
+          <h1>{{ curso.codigo }} - {{ curso.nome }}</h1>
+          <p class="subtitle">
+            Gerencie as matérias vinculadas à grade do curso.
+          </p>
+        </div>
+
+        <a href="/cursos/" class="secondary-button">
+          Voltar para cursos
+        </a>
+      </header>
+
+      {% if erro %}
+        <div class="form-alert">
+          {{ erro }}
+        </div>
+      {% endif %}
+
+      <section class="section-card form-card">
+        <div class="section-header">
+          <div>
+            <h2>Adicionar matéria</h2>
+            <p>Vincule uma matéria a um semestre da grade curricular.</p>
+          </div>
+        </div>
+
+        <form
+          method="post"
+          action="/cursos/{{ curso.id_curso }}/grade/adicionar"
+          class="sigma-form"
+        >
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="materia_id">Matéria</label>
+              <select id="materia_id" name="materia_id" required>
+                <option value="">Selecione</option>
+
+                {% for materia in materias %}
+                  <option value="{{ materia.id_materia }}">
+                    {{ materia.codigo }} - {{ materia.nome }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="semestre">Semestre</label>
+              <input
+                type="number"
+                id="semestre"
+                name="semestre"
+                min="1"
+                max="12"
+                placeholder="Ex: 1"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button type="submit" class="primary-button">
+              Adicionar matéria
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Matérias na grade</h2>
+            <p>Lista de matérias atualmente vinculadas ao curso.</p>
+          </div>
+        </div>
+
+        {% if grade %}
+          <div class="table-wrapper">
+            <table class="sigma-table">
+              <thead>
+                <tr>
+                  <th>Semestre</th>
+                  <th>Código</th>
+                  <th>Matéria</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {% for item in grade %}
+                  {% set materia = materias_por_id.get(item.materia_id) %}
+                  <tr>
+                    <td>{{ item.semestre }}º semestre</td>
+                    <td>{{ materia.codigo if materia else "—" }}</td>
+                    <td>{{ materia.nome if materia else "—" }}</td>
+                    <td>
+                      <div class="action-group">
+                        <form
+                          method="post"
+                          action="/cursos/{{ curso.id_curso }}/grade/{{ item.materia_id }}/remover"
+                        >
+                          <button
+                            type="submit"
+                            class="danger-button"
+                            data-confirm="Deseja remover esta matéria da grade?"
+                          >
+                            Remover
+                          </button>
+                        </form>
+                      </div>
+                    </td>
+                  </tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <h2>Nenhuma matéria vinculada</h2>
+            <p>Este curso ainda não possui matérias cadastradas na grade.</p>
+          </div>
+        {% endif %}
+      </section>
+    </main>
+  </div>
+</body>
+</html>

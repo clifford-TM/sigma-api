@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Nova aula - SIGMA</title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/form.css" />
+  <script src="/static/js/form.js" defer></script>
+</head>
+
+<body>
+  <div class="form-page">
+    <main class="form-shell">
+      <header class="form-header">
+        <a href="/eventos" class="text-link">← Voltar para eventos</a>
+
+        <div>
+          <p class="eyebrow">Gestão acadêmica</p>
+          <h1>Nova aula</h1>
+          <p class="subtitle">
+            Agende uma aula vinculando turma, matéria, sala e horário previsto.
+          </p>
+        </div>
+      </header>
+
+      {% if erro %}
+        <div class="form-alert">
+          {{ erro }}
+        </div>
+      {% endif %}
+
+      <section class="section-card form-card">
+        <form method="post" action="/eventos" class="sigma-form">
+          <input type="hidden" name="tipo" value="aula" />
+          <input type="hidden" id="alocacao_id" name="alocacao_id" value="" />
+
+          <div class="form-grid">
+            <div class="form-group form-group-full">
+              <label for="turma_select">Turma</label>
+              <select id="turma_select" required>
+                <option value="">Selecione</option>
+
+                {% set turmas_renderizadas = [] %}
+                {% for item in alocacoes %}
+                  {% if item.turma_id not in turmas_renderizadas %}
+                    <option value="{{ item.turma_id }}">
+                      {{ item.curso_codigo }} - {{ item.curso_nome }}
+                      | {{ item.semestre }}º semestre
+                      | {{ item.periodo|capitalize }}
+                      | {{ item.ano }}
+                    </option>
+                    {% set _ = turmas_renderizadas.append(item.turma_id) %}
+                  {% endif %}
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group form-group-full">
+              <label for="materia_select">Matéria</label>
+              <select id="materia_select" required disabled>
+                <option value="">Selecione uma turma primeiro</option>
+
+                {% for item in alocacoes %}
+                  <option
+                    value="{{ item.materia_id }}"
+                    data-turma-id="{{ item.turma_id }}"
+                  >
+                    {{ item.materia_codigo }} - {{ item.materia_nome }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="sala_id">Sala</label>
+              <select id="sala_id" name="sala_id" required>
+                <option value="">Selecione</option>
+
+                {% for sala in salas %}
+                  <option
+                    value="{{ sala.id_sala }}"
+                    {% if valores and valores.sala_id == sala.id_sala %}selected{% endif %}
+                  >
+                    {{ sala.numero }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="inicio_previsto">Início previsto</label>
+              <input
+                type="datetime-local"
+                id="inicio_previsto"
+                name="inicio_previsto"
+                value="{{ valores.inicio_previsto if valores else '' }}"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="fim_previsto">Fim previsto</label>
+              <input
+                type="datetime-local"
+                id="fim_previsto"
+                name="fim_previsto"
+                value="{{ valores.fim_previsto if valores else '' }}"
+                required
+              />
+            </div>
+
+            <div class="form-group form-group-full">
+              <label for="descricao">Descrição</label>
+              <textarea
+                id="descricao"
+                name="descricao"
+                rows="4"
+                placeholder="Descreva brevemente o conteúdo ou finalidade da aula"
+              >{{ valores.descricao if valores else '' }}</textarea>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <a href="/eventos" class="secondary-button">Cancelar</a>
+            <button type="submit" class="primary-button">Agendar aula</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

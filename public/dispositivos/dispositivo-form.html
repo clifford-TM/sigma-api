@@ -1,80 +1,124 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>Cadastrar dispositivo - SIGMA</title>
-  </head>
-  <body>
-    <h1>Cadastrar dispositivo</h1>
 
-    <p>Logado como {{ usuario.nome }} ({{ usuario.tipo }})</p>
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/form.css">
+    <script src="/static/js/form.js" defer></script>
+</head>
+<body>
+    <div class="form-page">
+        <main class="form-shell">
 
-    {% if erro %}
-      <p style="color: red;">{{ erro }}</p>
-    {% endif %}
+            <header class="form-header">
+                <a href="/dispositivos" class="text-link">
+                    ← Voltar para dispositivos
+                </a>
 
-    <form action="/dispositivos" method="post">
-      <div>
-        <label for="nome">Nome</label>
-        <input
-          type="text"
-          id="nome"
-          name="nome"
-          value="{{ valores.nome if valores else '' }}"
-          required
-        />
-      </div>
+                <div>
+                    <p class="eyebrow">Infraestrutura embarcada</p>
 
-      <div>
-        <label for="identificador_fisico">Identificador físico</label>
-        <input
-          type="text"
-          id="identificador_fisico"
-          name="identificador_fisico"
-          value="{{ valores.identificador_fisico if valores else '' }}"
-          placeholder="ex.: esp32_lab01_ctrl"
-          required
-        />
-      </div>
+                    <h1>Cadastrar dispositivo</h1>
 
-      <div>
-        <label for="sala_id">Sala vinculada</label>
-        <select id="sala_id" name="sala_id" required>
-          <option value="">Selecione</option>
-          {% for sala in salas %}
-            <option
-              value="{{ sala.id_sala }}"
-              {% if valores and valores.sala_id == sala.id_sala %}selected{% endif %}
-            >
-              {{ sala.numero }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
+                    <p class="subtitle">
+                        Registre dispositivos responsáveis pelo monitoramento e controle dos ambientes.
+                    </p>
+                </div>
+            </header>
 
-      <div>
-        <input
-          type="checkbox"
-          id="ativo"
-          name="ativo"
-          {% if not valores or valores.ativo %}checked{% endif %}
-        />
-        <label for="ativo">Dispositivo ativo</label>
-      </div>
+            {% if erro %}
+                <div class="form-alert">
+                    {{ erro }}
+                </div>
+            {% endif %}
 
-      <div>
-        <button type="submit">Salvar</button>
-      </div>
-    </form>
+            <section class="section-card form-card">
+                <form action="/dispositivos" method="post" class="sigma-form">
 
-    <p>
-      <a href="/dispositivos">Voltar para dispositivos</a>
-    </p>
+                    <div class="form-grid">
 
-    <p>
-      <a href="/admin/dashboard">Dashboard</a>
-      <a href="/logout">Sair</a>
-    </p>
-  </body>
+                        <div class="form-group">
+                            <label for="nome">Nome</label>
+
+                            <input
+                                type="text"
+                                id="nome"
+                                name="nome"
+                                value="{{ valores.nome if valores else '' }}"
+                                placeholder="Ex: Controlador Laboratório 01"
+                                required
+                            />
+                        </div>
+
+                        <div class="form-group">
+                            <label for="sala_id">Sala vinculada</label>
+
+                            <select id="sala_id" name="sala_id" required>
+                                <option value="">Selecione</option>
+
+                                {% for sala in salas %}
+                                    <option
+                                        value="{{ sala.id_sala }}"
+                                        {% if valores and valores.sala_id == sala.id_sala %}selected{% endif %}
+                                    >
+                                        {{ sala.numero }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+
+                        <div class="form-group form-group-full">
+                            <label for="identificador_fisico">
+                                Identificador físico
+                            </label>
+
+                            <input
+                                type="text"
+                                id="identificador_fisico"
+                                name="identificador_fisico"
+                                value="{{ valores.identificador_fisico if valores else '' }}"
+                                placeholder="Ex: esp32_lab01_ctrl"
+                                required
+                            />
+
+                            <small class="form-help">
+                                Identificador utilizado pelo dispositivo para comunicação com o sistema.
+                            </small>
+                        </div>
+
+                        <div class="form-group form-group-full">
+                            <label class="checkbox-group">
+                                <input
+                                    type="checkbox"
+                                    id="ativo"
+                                    name="ativo"
+                                    {% if not valores or valores.ativo %}checked{% endif %}
+                                />
+
+                                <span>Dispositivo ativo</span>
+                            </label>
+                        </div>
+
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="/dispositivos" class="secondary-button">
+                            Cancelar
+                        </a>
+
+                        <button type="submit" class="primary-button">
+                            Salvar dispositivo
+                        </button>
+                    </div>
+
+                </form>
+            </section>
+
+        </main>
+    </div>
+</body>
 </html>

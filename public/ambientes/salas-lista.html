@@ -1,50 +1,103 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Salas - SIGMA</title>
-  </head>
-  <body>
-    <h1>Salas</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <p>Logado como {{ usuario.nome }} ({{ usuario.tipo }})</p>
+  <title>Salas - SIGMA</title>
 
-    <p>
-      <a href="/ambientes/salas/nova">Nova sala</a>
-      <a href="/admin/dashboard">Dashboard</a>
-      <a href="/logout">Sair</a>
-    </p>
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/list.css" />
+  <script src="/static/js/list.js" defer></script>
+</head>
 
-    {% if salas %}
-      <table border="1" cellpadding="8">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Sala</th>
-            <th>Tipo</th>
-            <th>Estado atual</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for sala in salas %}
-            <tr>
-              <td>{{ sala.id_sala }}</td>
-              <td>{{ sala.numero }}</td>
-              <td>{{ sala.tipo }}</td>
-              <td>
-                {% if sala.estado_atual_id in estados %}
-                  {{ estados[sala.estado_atual_id].nome }}
-                {% else %}
-                  Estado não encontrado
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p>Nenhuma sala cadastrada até o momento.</p>
-    {% endif %}
-  </body>
+<body>
+  <div class="list-page">
+    <header class="list-header">
+      <div>
+        <p class="eyebrow">Administração</p>
+
+        <h1>Salas</h1>
+
+        <p class="subtitle">
+          Gerencie os ambientes cadastrados e acompanhe o estado atual de cada sala.
+        </p>
+      </div>
+
+      <div class="header-actions">
+        <a
+          href="/admin/dashboard"
+          class="secondary-button"
+        >
+          Dashboard
+        </a>
+
+        <a
+          href="/ambientes/salas/nova"
+          class="primary-button"
+        >
+          Nova sala
+        </a>
+      </div>
+    </header>
+
+    <section class="section-card">
+      {% if salas %}
+        <div class="table-wrapper">
+          <table class="sigma-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Sala</th>
+                <th>Tipo</th>
+                <th>Estado atual</th>
+              </tr>
+            </thead>
+
+            <tbody>
+              {% for sala in salas %}
+                <tr>
+                  <td>#{{ sala.id_sala }}</td>
+
+                  <td>
+                    {{ sala.numero }}
+                  </td>
+
+                  <td>
+                    {{ sala.tipo|capitalize }}
+                  </td>
+
+                  <td>
+                    {% if sala.estado_atual_id in estados %}
+                      <span class="status-badge status-finalizado">
+                        {{ estados[sala.estado_atual_id].nome }}
+                      </span>
+                    {% else %}
+                      <span class="status-badge status-cancelado">
+                        Estado não encontrado
+                      </span>
+                    {% endif %}
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+
+          </table>
+        </div>
+
+      {% else %}
+
+        <div class="empty-state">
+          <h2>Nenhuma sala cadastrada</h2>
+
+          <p>
+            Ainda não existem ambientes cadastrados no sistema.
+          </p>
+        </div>
+
+      {% endif %}
+    </section>
+
+  </div>
+</body>
 </html>

@@ -1,21 +1,152 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <title>Dashboard do Administrador - SIGMA</title>
-</head>
-<body>
-  <h1>Dashboard do Administrador</h1>
-  <p>Bem-vindo, {{ usuario.nome }} ({{ usuario.tipo }})</p>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <nav>
-    <a href="/usuarios">Usuários</a>
-    <a href="/ambientes/salas">Salas</a>
-    <a href="/dispositivos">Dispositivos</a>
-    <a href="/cursos/">Cursos</a>
-    <a href="/materias/">Matérias</a>
-    <a href="/turmas/">Turmas</a>
-    <a href="/logout">Sair</a>
-  </nav>
+  <title>Dashboard do Administrador - SIGMA</title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+</head>
+
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <img src="/static/img/sigma-logo-white.png" alt="SIGMA" />
+        </div>
+
+        <div class="brand-info">
+          <div class="brand-title">SIGMA</div>
+          <div class="brand-subtitle">
+            Sistema de Gestão e Monitoramento de Ambientes
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/admin/dashboard" class="nav-link active">Dashboard</a>
+        <a href="/usuarios" class="nav-link">Usuários</a>
+        <a href="/ambientes/salas" class="nav-link">Salas</a>
+        <a href="/dispositivos" class="nav-link">Dispositivos</a>
+        <a href="/cursos/" class="nav-link">Cursos</a>
+        <a href="/materias/" class="nav-link">Matérias</a>
+        <a href="/turmas/" class="nav-link">Turmas</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="avatar">{{ usuario.nome[0] }}</div>
+          <div>
+            <strong>{{ usuario.nome }}</strong>
+            <span>Administrador</span>
+          </div>
+        </div>
+
+        <a href="/logout" class="logout-link">Sair</a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Dashboard administrativo</p>
+          <h1>Olá, {{ usuario.nome }}</h1>
+          <p class="subtitle">
+            Gerencie usuários, ambientes, dispositivos e a estrutura acadêmica do SIGMA.
+          </p>
+        </div>
+      </header>
+
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Administração do sistema</h2>
+            <p>Cadastros e recursos principais da aplicação.</p>
+          </div>
+        </div>
+
+        <div class="project-grid">
+          <article class="project-card">
+            <div class="project-top">
+              <div>
+                <h3>Usuários</h3>
+                <p>Cadastre e consulte alunos, professores, equipe operacional e administradores.</p>
+              </div>
+            </div>
+
+            <a href="/usuarios" class="primary-button full">Acessar usuários</a>
+          </article>
+
+          <article class="project-card">
+            <div class="project-top">
+              <div>
+                <h3>Salas</h3>
+                <p>Gerencie os ambientes físicos utilizados em aulas, projetos e operações.</p>
+              </div>
+            </div>
+
+            <a href="/ambientes/salas" class="primary-button full">Acessar salas</a>
+          </article>
+
+          <article class="project-card">
+            <div class="project-top">
+              <div>
+                <h3>Dispositivos</h3>
+                <p>Consulte e organize os dispositivos vinculados ao monitoramento dos ambientes.</p>
+              </div>
+            </div>
+
+            <a href="/dispositivos" class="primary-button full">Acessar dispositivos</a>
+          </article>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Estrutura acadêmica</h2>
+            <p>Dados usados para organizar turmas, cursos, matérias e eventos acadêmicos.</p>
+          </div>
+        </div>
+
+        <div class="project-grid">
+          <article class="project-card">
+            <div class="project-top">
+              <div>
+                <h3>Cursos</h3>
+                <p>Gerencie os cursos cadastrados na instituição.</p>
+              </div>
+            </div>
+
+            <a href="/cursos/" class="secondary-button full">Acessar cursos</a>
+          </article>
+
+          <article class="project-card">
+            <div class="project-top">
+              <div>
+                <h3>Matérias</h3>
+                <p>Consulte e organize as matérias vinculadas aos cursos.</p>
+              </div>
+            </div>
+
+            <a href="/materias/" class="secondary-button full">Acessar matérias</a>
+          </article>
+
+          <article class="project-card">
+            <div class="project-top">
+              <div>
+                <h3>Turmas</h3>
+                <p>Gerencie turmas e vínculos acadêmicos utilizados nos eventos.</p>
+              </div>
+            </div>
+
+            <a href="/turmas/" class="secondary-button full">Acessar turmas</a>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
 </body>
 </html>

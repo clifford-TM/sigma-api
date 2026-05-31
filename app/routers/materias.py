@@ -30,7 +30,7 @@ def listar_materias(
 
     return templates.TemplateResponse(
         request=request,
-        name="materias/index.html",
+        name="materias/materias-lista.html",
         context={
             "usuario": current_user,
             "materias": materias,

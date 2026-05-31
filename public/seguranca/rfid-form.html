@@ -1,111 +1,137 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Substituição RFID</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Substituição RFID - SIGMA</title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/form.css" />
+  <script src="/static/js/form.js" defer></script>
 </head>
 
 <body>
+  <div class="form-page">
+    <main class="form-shell">
+      <header class="form-header">
+        <a href="/seguranca/rfid" class="text-link">
+          ← Voltar para substituição RFID
+        </a>
 
-<h1>Substituição de RFID</h1>
+        <div>
+          <p class="eyebrow">Controle de identificação</p>
+          <h1>Substituição de RFID</h1>
+          <p class="subtitle">
+            Valide os dados do usuário e registre uma nova TAG RFID autorizada pela segurança.
+          </p>
+        </div>
+      </header>
 
-<p>Operador: {{ usuario.nome }}</p>
+      {% if erro %}
+        <div class="form-alert">
+          {{ erro }}
+        </div>
+      {% endif %}
 
-<nav>
-    <a href="/seguranca/dashboard">Dashboard</a> |
-    <a href="/seguranca/rfid">Voltar</a> |
-    <a href="/logout">Sair</a>
-</nav>
+      <section class="section-card form-card">
+        <form method="POST" class="sigma-form">
+          <div class="form-section-title">
+            <h2>Dados do aluno</h2>
+            <p>Informações atuais do usuário selecionado.</p>
+          </div>
 
-<hr>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="aluno_nome">Nome</label>
+              <input
+                id="aluno_nome"
+                type="text"
+                value="{{ aluno.nome }}"
+                readonly
+              />
+            </div>
 
-{% if erro %}
-<div style="color:red">
-    {{ erro }}
-</div>
-<hr>
-{% endif %}
+            <div class="form-group">
+              <label for="aluno_email">Email</label>
+              <input
+                id="aluno_email"
+                type="text"
+                value="{{ aluno.email }}"
+                readonly
+              />
+            </div>
 
-<h2>Dados do aluno</h2>
+            <div class="form-group">
+              <label for="aluno_tipo">Tipo</label>
+              <input
+                id="aluno_tipo"
+                type="text"
+                value="{{ aluno.tipo }}"
+                readonly
+              />
+            </div>
 
-<form method="POST">
+            <div class="form-group">
+              <label for="tag_atual">Tag atual</label>
+              <input
+                id="tag_atual"
+                type="text"
+                value="{{ tag_ativa.codigo if tag_ativa else 'SEM TAG ATIVA' }}"
+                readonly
+              />
 
-<label>Nome</label><br>
-<input
-type="text"
-value="{{ aluno.nome }}"
-readonly
->
-<br><br>
+              {% if tag_ativa %}
+                <small class="form-help">
+                  Emitida em: {{ tag_ativa.emitida_em.strftime("%d/%m/%Y %H:%M") }}
+                </small>
+              {% endif %}
+            </div>
+          </div>
 
-<label>Email</label><br>
-<input
-type="text"
-value="{{ aluno.email }}"
-readonly
->
-<br><br>
+          <div class="form-divider"></div>
 
-<label>Tipo</label><br>
-<input
-type="text"
-value="{{ aluno.tipo }}"
-readonly
->
-<br><br>
+          <div class="form-section-title">
+            <h2>Nova identificação</h2>
+            <p>Informe a nova TAG e o motivo da substituição.</p>
+          </div>
 
-<label>Tag atual</label><br>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="nova_tag">Nova TAG RFID</label>
+              <input
+                id="nova_tag"
+                name="nova_tag"
+                type="text"
+                maxlength="24"
+                required
+                placeholder="Ex.: A1B2C3D4"
+              />
+            </div>
 
-<input
-type="text"
-value="{{ tag_ativa.codigo if tag_ativa else 'SEM TAG ATIVA' }}"
-readonly
->
+            <div class="form-group form-group-full">
+              <label for="motivo">Motivo</label>
+              <textarea
+                id="motivo"
+                name="motivo"
+                rows="4"
+                placeholder="Perda, extravio, substituição..."
+              >Substituição autorizada pela segurança</textarea>
+            </div>
+          </div>
 
-{% if tag_ativa %}
-<br>
-<small>
-Emitida em:
-{{ tag_ativa.emitida_em.strftime("%d/%m/%Y %H:%M") }}
-</small>
-{% endif %}
+          <div class="form-actions">
+            <a href="/seguranca/rfid" class="secondary-button">
+              Cancelar
+            </a>
 
-<br><br>
-
-<hr>
-
-<h2>Nova identificação</h2>
-
-<label>Nova TAG RFID</label><br>
-
-<input
-name="nova_tag"
-type="text"
-maxlength="24"
-required
-placeholder="Ex.: A1B2C3D4"
-/>
-
-<br><br>
-
-<label>Motivo</label><br>
-
-<textarea
-name="motivo"
-rows="4"
-cols="60"
-placeholder="Perda, extravio, substituição..."
->
-Substituição autorizada pela segurança
-</textarea>
-
-<br><br>
-
-<button type="submit">
-Substituir TAG
-</button>
-
-</form>
-
+            <button type="submit" class="primary-button">
+              Substituir TAG
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
 </body>
 </html>

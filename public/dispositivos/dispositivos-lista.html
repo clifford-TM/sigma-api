@@ -1,56 +1,137 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Dispositivos - SIGMA</title>
-  </head>
-  <body>
-    <h1>Dispositivos</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <p>Logado como {{ usuario.nome }} ({{ usuario.tipo }})</p>
+  <title>Dispositivos - SIGMA</title>
 
-    <p>
-      <a href="/dispositivos/novo">Novo dispositivo</a>
-      <a href="/admin/dashboard">Dashboard</a>
-      <a href="/logout">Sair</a>
-    </p>
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/list.css" />
+  <script src="/static/js/list.js" defer></script>
+</head>
 
-    {% if dispositivos %}
-      <table border="1" cellpadding="8">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nome</th>
-            <th>Identificador físico</th>
-            <th>Sala</th>
-            <th>Ativo</th>
-            <th>Última comunicação</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for dispositivo in dispositivos %}
-            <tr>
-              <td>{{ dispositivo.id_dispositivo }}</td>
-              <td>{{ dispositivo.nome }}</td>
-              <td>{{ dispositivo.identificador_fisico }}</td>
-              <td>
-                {% if dispositivo.sala_id in salas %}
-                  {{ salas[dispositivo.sala_id].numero }}
-                {% else %}
-                  Sala não encontrada
-                {% endif %}
-              </td>
-              <td>{{ "Sim" if dispositivo.ativo else "Não" }}</td>
-              <td>
-                {{ dispositivo.ultima_comunicacao if dispositivo.ultima_comunicacao else "-" }}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p>Nenhum dispositivo cadastrado até o momento.</p>
-    {% endif %}
-  </body>
+<body>
+  <div class="list-page">
+    <header class="list-header">
+      <div>
+        <p class="eyebrow">Infraestrutura embarcada</p>
+
+        <h1>Dispositivos</h1>
+
+        <p class="subtitle">
+          Gerencie os dispositivos instalados nos ambientes monitorados.
+        </p>
+      </div>
+
+      <div class="header-actions">
+        <a
+          href="/admin/dashboard"
+          class="secondary-button"
+        >
+          Dashboard
+        </a>
+
+        <a
+          href="/dispositivos/novo"
+          class="primary-button"
+        >
+          Novo dispositivo
+        </a>
+      </div>
+    </header>
+
+    <section class="section-card">
+
+      {% if dispositivos %}
+
+        <div class="table-wrapper">
+
+          <table class="sigma-table">
+
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Identificador físico</th>
+                <th>Sala</th>
+                <th>Status</th>
+                <th>Última comunicação</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              {% for dispositivo in dispositivos %}
+                <tr>
+
+                  <td>
+                    #{{ dispositivo.id_dispositivo }}
+                  </td>
+
+                  <td>
+                    {{ dispositivo.nome }}
+                  </td>
+
+                  <td>
+                    <code>{{ dispositivo.identificador_fisico }}</code>
+                  </td>
+
+                  <td>
+                    {% if dispositivo.sala_id in salas %}
+                      {{ salas[dispositivo.sala_id].numero }}
+                    {% else %}
+                      Sala não encontrada
+                    {% endif %}
+                  </td>
+
+                  <td>
+                    {% if dispositivo.ativo %}
+                      <span class="status-badge status-finalizado">
+                        Ativo
+                      </span>
+                    {% else %}
+                      <span class="status-badge status-cancelado">
+                        Inativo
+                      </span>
+                    {% endif %}
+                  </td>
+
+                  <td>
+                    {% if dispositivo.ultima_comunicacao %}
+                      {{ dispositivo.ultima_comunicacao }}
+                    {% else %}
+                      <span class="action-placeholder">
+                        Nunca comunicou
+                      </span>
+                    {% endif %}
+                  </td>
+
+                </tr>
+              {% endfor %}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      {% else %}
+
+        <div class="empty-state">
+
+          <h2>Nenhum dispositivo cadastrado</h2>
+
+          <p>
+            Ainda não existem dispositivos registrados no sistema.
+          </p>
+
+        </div>
+
+      {% endif %}
+
+    </section>
+
+  </div>
+</body>
 </html>

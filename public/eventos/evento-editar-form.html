@@ -6,9 +6,9 @@
 
   <title>
     {% if usuario.tipo == "aluno" %}
-      Solicitar projeto - SIGMA
+      Editar projeto - SIGMA
     {% else %}
-      Novo evento - SIGMA
+      Editar evento - SIGMA
     {% endif %}
   </title>
 
@@ -32,25 +32,25 @@
         <div>
           <p class="eyebrow">
             {% if usuario.tipo == "aluno" %}
-              Solicitação acadêmica
+              Edição de projeto
             {% else %}
-              Gestão de eventos
+              Edição de evento
             {% endif %}
           </p>
 
           <h1>
             {% if usuario.tipo == "aluno" %}
-              Solicitar projeto
+              Editar projeto
             {% else %}
-              Novo evento
+              Editar evento
             {% endif %}
           </h1>
 
           <p class="subtitle">
             {% if usuario.tipo == "aluno" %}
-              Preencha os dados para solicitar o uso de uma sala em um projeto.
+              Atualize as informações do projeto solicitado.
             {% else %}
-              Cadastre um novo evento vinculado a um ambiente do SIGMA.
+              Atualize as informações do evento cadastrado.
             {% endif %}
           </p>
         </div>
@@ -63,48 +63,30 @@
       {% endif %}
 
       <section class="section-card form-card">
-        <form action="/eventos" method="post" class="sigma-form">
-          <div class="form-grid">
-            <div class="form-group">
-              <label for="tipo">Tipo do evento</label>
-              <select id="tipo" name="tipo" required>
-                <option value="">Selecione</option>
+        <div class="form-summary">
+          <span class="status-chip status-{{ evento.status }}">
+            {{ evento.status }}
+          </span>
 
-                {% if usuario.tipo == "professor" or usuario.tipo == "admin" %}
-                  <option value="aula" {% if valores and valores.tipo == 'aula' %}selected{% endif %}>
-                    Aula
-                  </option>
-                {% endif %}
-
-                {% if usuario.tipo == "aluno" or usuario.tipo == "admin" %}
-                  <option value="projeto" {% if valores and valores.tipo == 'projeto' %}selected{% endif %}>
-                    Projeto
-                  </option>
-                {% endif %}
-
-                {% if usuario.tipo == "seguranca" or usuario.tipo == "admin" %}
-                  <option value="inspecao" {% if valores and valores.tipo == 'inspecao' %}selected{% endif %}>
-                    Inspeção
-                  </option>
-                {% endif %}
-
-                {% if usuario.tipo == "tecnico" or usuario.tipo == "admin" %}
-                  <option value="manutencao" {% if valores and valores.tipo == 'manutencao' %}selected{% endif %}>
-                    Manutenção
-                  </option>
-                {% endif %}
-
-                {% if usuario.tipo == "zelador" or usuario.tipo == "admin" %}
-                  <option value="limpeza" {% if valores and valores.tipo == 'limpeza' %}selected{% endif %}>
-                    Limpeza
-                  </option>
-                {% endif %}
-              </select>
-            </div>
-
+          <h2>
             {% if usuario.tipo == "aluno" %}
-              <div class="form-group">
+              Projeto #{{ evento.id_evento }}
+            {% else %}
+              Evento #{{ evento.id_evento }}
+            {% endif %}
+          </h2>
+        </div>
+
+        <form
+          action="/eventos/{{ evento.id_evento }}/editar"
+          method="post"
+          class="sigma-form"
+        >
+          <div class="form-grid">
+            {% if evento.tipo == "projeto" and professores %}
+              <div class="form-group form-group-full">
                 <label for="autorizado_por">Professor responsável</label>
+
                 <select id="autorizado_por" name="autorizado_por" required>
                   <option value="">Selecione</option>
 
@@ -122,6 +104,7 @@
 
             <div class="form-group">
               <label for="sala_id">Sala</label>
+
               <select id="sala_id" name="sala_id" required>
                 <option value="">Selecione</option>
 
@@ -138,6 +121,7 @@
 
             <div class="form-group">
               <label for="inicio_previsto">Início previsto</label>
+
               <input
                 type="datetime-local"
                 id="inicio_previsto"
@@ -149,6 +133,7 @@
 
             <div class="form-group">
               <label for="fim_previsto">Fim previsto</label>
+
               <input
                 type="datetime-local"
                 id="fim_previsto"
@@ -160,26 +145,21 @@
 
             <div class="form-group form-group-full">
               <label for="descricao">Descrição</label>
+
               <textarea
                 id="descricao"
                 name="descricao"
                 rows="4"
-                placeholder="Descreva brevemente a finalidade do evento"
+                placeholder="Descreva brevemente o evento"
               >{{ valores.descricao if valores else '' }}</textarea>
             </div>
           </div>
 
           <div class="form-actions">
-            <a href="/eventos" class="secondary-button">
-              Cancelar
-            </a>
+            <a href="/eventos" class="secondary-button">Cancelar</a>
 
             <button type="submit" class="primary-button">
-              {% if usuario.tipo == "aluno" %}
-                Solicitar projeto
-              {% else %}
-                Salvar evento
-              {% endif %}
+              Salvar alterações
             </button>
           </div>
         </form>

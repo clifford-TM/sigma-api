@@ -2,51 +2,106 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>
         {% if curso %}
             Editar curso
         {% else %}
             Novo curso
         {% endif %}
+        - SIGMA
     </title>
+
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/form.css">
+    <script src="/static/js/form.js" defer></script>
 </head>
 <body>
-    <h1>
-        {% if curso %}
-            Editar curso
-        {% else %}
-            Novo curso
-        {% endif %}
-    </h1>
+    <div class="form-page">
+        <main class="form-shell">
 
-    {% if erro %}
-        <p style="color:red;">{{ erro }}</p>
-    {% endif %}
+            <header class="form-header">
+                <a href="/cursos/" class="text-link">
+                    ← Voltar para cursos
+                </a>
 
-    <form method="post"
-          action="{% if curso %}/cursos/{{ curso.id_curso }}/editar{% else %}/cursos/novo{% endif %}">
+                <div>
+                    <p class="eyebrow">Estrutura acadêmica</p>
 
-        <label for="codigo">Código:</label><br>
-        <input
-            type="text"
-            id="codigo"
-            name="codigo"
-            value="{{ curso.codigo if curso else '' }}"
-            required
-        ><br><br>
+                    <h1>
+                        {% if curso %}
+                            Editar curso
+                        {% else %}
+                            Novo curso
+                        {% endif %}
+                    </h1>
 
-        <label for="nome">Nome:</label><br>
-        <input
-            type="text"
-            id="nome"
-            name="nome"
-            value="{{ curso.nome if curso else '' }}"
-            required
-        ><br><br>
+                    <p class="subtitle">
+                        Cadastre e mantenha os cursos disponíveis no SIGMA.
+                    </p>
+                </div>
+            </header>
 
-        <button type="submit">Salvar</button>
-    </form>
+            {% if erro %}
+                <div class="form-alert">
+                    {{ erro }}
+                </div>
+            {% endif %}
 
-    <p><a href="/cursos/">Voltar</a></p>
+            <section class="section-card form-card">
+                <form
+                    method="post"
+                    class="sigma-form"
+                    action="{% if curso %}/cursos/{{ curso.id_curso }}/editar{% else %}/cursos/novo{% endif %}"
+                >
+
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="codigo">Código</label>
+
+                            <input
+                                type="text"
+                                id="codigo"
+                                name="codigo"
+                                value="{{ curso.codigo if curso else '' }}"
+                                placeholder="Ex: SEMB"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="nome">Nome</label>
+
+                            <input
+                                type="text"
+                                id="nome"
+                                name="nome"
+                                value="{{ curso.nome if curso else '' }}"
+                                placeholder="Ex: Sistemas Embarcados"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="/cursos/" class="secondary-button">
+                            Cancelar
+                        </a>
+
+                        <button type="submit" class="primary-button">
+                            {% if curso %}
+                                Salvar alterações
+                            {% else %}
+                                Criar curso
+                            {% endif %}
+                        </button>
+                    </div>
+
+                </form>
+            </section>
+
+        </main>
+    </div>
 </body>
 </html>

@@ -1,29 +1,51 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Auditoria de eventos - SIGMA</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Auditoria de eventos - SIGMA</title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/list.css" />
+  <script src="/static/js/list.js" defer></script>
 </head>
+
 <body>
-    <h1>Auditoria de eventos</h1>
+  <div class="list-page">
+    <header class="list-header">
+      <div>
+        <p class="eyebrow">Segurança patrimonial</p>
+        <h1>Auditoria de eventos</h1>
+        <p class="subtitle">
+          Consulte o histórico operacional dos eventos realizados nos ambientes monitorados.
+        </p>
+      </div>
 
-    <p>Bem-vindo, {{ usuario.nome }}</p>
+      <div class="header-actions">
+        <a href="/seguranca/dashboard" class="secondary-button">
+          Dashboard
+        </a>
+      </div>
+    </header>
 
-    <p><a href="/seguranca/dashboard">Voltar ao dashboard</a></p>
-
-    <form method="get" action="/seguranca/auditoria">
-        <label>Tipo:</label>
-        <select name="tipo">
+    <section class="section-card filter-card">
+      <form method="get" action="/seguranca/auditoria" class="filter-form">
+        <div class="filter-group">
+          <label for="tipo">Tipo</label>
+          <select id="tipo" name="tipo">
             <option value="">Todos</option>
             <option value="aula" {% if filtros.tipo == "aula" %}selected{% endif %}>Aula</option>
             <option value="projeto" {% if filtros.tipo == "projeto" %}selected{% endif %}>Projeto</option>
             <option value="limpeza" {% if filtros.tipo == "limpeza" %}selected{% endif %}>Limpeza</option>
             <option value="manutencao" {% if filtros.tipo == "manutencao" %}selected{% endif %}>Manutenção</option>
             <option value="inspecao" {% if filtros.tipo == "inspecao" %}selected{% endif %}>Inspeção</option>
-        </select>
+          </select>
+        </div>
 
-        <label>Status:</label>
-        <select name="status_evento">
+        <div class="filter-group">
+          <label for="status_evento">Status</label>
+          <select id="status_evento" name="status_evento">
             <option value="">Todos</option>
             <option value="pendente_aprovacao" {% if filtros.status_evento == "pendente_aprovacao" %}selected{% endif %}>Pendente aprovação</option>
             <option value="agendado" {% if filtros.status_evento == "agendado" %}selected{% endif %}>Agendado</option>
@@ -34,94 +56,140 @@
             <option value="finalizado" {% if filtros.status_evento == "finalizado" %}selected{% endif %}>Finalizado</option>
             <option value="cancelado" {% if filtros.status_evento == "cancelado" %}selected{% endif %}>Cancelado</option>
             <option value="nao_realizado" {% if filtros.status_evento == "nao_realizado" %}selected{% endif %}>Não realizado</option>
-        </select>
+          </select>
+        </div>
 
-        <label>Sala:</label>
-        <select name="sala_id">
+        <div class="filter-group">
+          <label for="sala_id">Sala</label>
+          <select id="sala_id" name="sala_id">
             <option value="">Todas</option>
             {% for sala in salas %}
-                <option value="{{ sala.id_sala }}" {% if filtros.sala_id == sala.id_sala %}selected{% endif %}>
-                    {{ sala.label }}
-                </option>
+              <option value="{{ sala.id_sala }}" {% if filtros.sala_id == sala.id_sala %}selected{% endif %}>
+                {{ sala.label }}
+              </option>
             {% endfor %}
-        </select>
+          </select>
+        </div>
 
-        <label>De:</label>
-        <input type="date" name="data_inicio" value="{{ filtros.data_inicio or '' }}">
+        <div class="filter-group">
+          <label for="data_inicio">De</label>
+          <input
+            type="date"
+            id="data_inicio"
+            name="data_inicio"
+            value="{{ filtros.data_inicio or '' }}"
+          />
+        </div>
 
-        <label>Até:</label>
-        <input type="date" name="data_fim" value="{{ filtros.data_fim or '' }}">
+        <div class="filter-group">
+          <label for="data_fim">Até</label>
+          <input
+            type="date"
+            id="data_fim"
+            name="data_fim"
+            value="{{ filtros.data_fim or '' }}"
+          />
+        </div>
 
-        <label>
+        <div class="filter-check">
+          <label class="checkbox-group">
             <input
-                type="checkbox"
-                name="somente_problemas"
-                value="true"
-                {% if filtros.somente_problemas %}checked{% endif %}
-            >
-            Somente problemas
-        </label>
+              type="checkbox"
+              name="somente_problemas"
+              value="true"
+              {% if filtros.somente_problemas %}checked{% endif %}
+            />
+            <span>Somente problemas</span>
+          </label>
+        </div>
 
-        <button type="submit">Filtrar</button>
-        <a href="/seguranca/auditoria">Limpar</a>
-    </form>
+        <div class="filter-actions">
+          <button type="submit" class="primary-button">Filtrar</button>
+          <a href="/seguranca/auditoria" class="secondary-button">Limpar</a>
+        </div>
+      </form>
+    </section>
 
-    <hr>
-
-    {% if eventos_auditados %}
-        <table border="1" cellpadding="6">
+    <section class="section-card">
+      {% if eventos_auditados %}
+        <div class="table-wrapper">
+          <table class="sigma-table">
             <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Tipo</th>
-                    <th>Sala</th>
-                    <th>Responsável</th>
-                    <th>Início previsto</th>
-                    <th>Início real</th>
-                    <th>Fim previsto</th>
-                    <th>Fim real</th>
-                    <th>Status</th>
-                    <th>Presenças</th>
-                    <th>Nível</th>
-                    <th>Alertas</th>
-                    <th>Ações</th>
-                </tr>
+              <tr>
+                <th>ID</th>
+                <th>Tipo</th>
+                <th>Sala</th>
+                <th>Responsável</th>
+                <th>Início previsto</th>
+                <th>Início real</th>
+                <th>Fim previsto</th>
+                <th>Fim real</th>
+                <th>Status</th>
+                <th>Presenças</th>
+                <th>Nível</th>
+                <th>Alertas</th>
+                <th>Ações</th>
+              </tr>
             </thead>
 
             <tbody>
-                {% for item in eventos_auditados %}
-                    <tr>
-                        <td>{{ item.evento.id_evento }}</td>
-                        <td>{{ item.evento.tipo }}</td>
-                        <td>{{ item.sala_label }}</td>
-                        <td>{{ item.evento.host_usuario.nome if item.evento.host_usuario else "-" }}</td>
-                        <td>{{ item.evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") if item.evento.inicio_previsto else "-" }}</td>
-                        <td>{{ item.evento.inicio_real.strftime("%d/%m/%Y %H:%M") if item.evento.inicio_real else "-" }}</td>
-                        <td>{{ item.evento.fim_previsto.strftime("%d/%m/%Y %H:%M") if item.evento.fim_previsto else "-" }}</td>
-                        <td>{{ item.evento.fim_real.strftime("%d/%m/%Y %H:%M") if item.evento.fim_real else "-" }}</td>
-                        <td>{{ item.evento.status }}</td>
-                        <td>{{ item.presencas_count }}</td>
-                        <td>{{ item.nivel }}</td>
-                        <td>
-                            {% if item.alertas %}
-                                <ul>
-                                    {% for alerta in item.alertas %}
-                                        <li>{{ alerta }}</li>
-                                    {% endfor %}
-                                </ul>
-                            {% else %}
-                                OK
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="/seguranca/auditoria/{{ item.evento.id_evento }}">Detalhes</a>
-                        </td>
-                    </tr>
-                {% endfor %}
+              {% for item in eventos_auditados %}
+                <tr>
+                  <td>#{{ item.evento.id_evento }}</td>
+                  <td>{{ item.evento.tipo|capitalize }}</td>
+                  <td>{{ item.sala_label }}</td>
+                  <td>{{ item.evento.host_usuario.nome if item.evento.host_usuario else "-" }}</td>
+                  <td>{{ item.evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") if item.evento.inicio_previsto else "-" }}</td>
+                  <td>{{ item.evento.inicio_real.strftime("%d/%m/%Y %H:%M") if item.evento.inicio_real else "-" }}</td>
+                  <td>{{ item.evento.fim_previsto.strftime("%d/%m/%Y %H:%M") if item.evento.fim_previsto else "-" }}</td>
+                  <td>{{ item.evento.fim_real.strftime("%d/%m/%Y %H:%M") if item.evento.fim_real else "-" }}</td>
+
+                  <td>
+                    <span class="status-badge status-{{ item.evento.status }}">
+                      {{ item.evento.status }}
+                    </span>
+                  </td>
+
+                  <td>{{ item.presencas_count }}</td>
+
+                  <td>
+                    <span class="status-badge status-{{ item.nivel }}">
+                      {{ item.nivel }}
+                    </span>
+                  </td>
+
+                  <td>
+                    {% if item.alertas %}
+                      <div class="alert-list">
+                        {% for alerta in item.alertas %}
+                          <span class="alert-item">{{ alerta }}</span>
+                        {% endfor %}
+                      </div>
+                    {% else %}
+                      <span class="status-badge status-finalizado">OK</span>
+                    {% endif %}
+                  </td>
+
+                  <td>
+                    <a
+                      href="/seguranca/auditoria/{{ item.evento.id_evento }}"
+                      class="secondary-button"
+                    >
+                      Detalhes
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
             </tbody>
-        </table>
-    {% else %}
-        <p>Nenhum evento encontrado.</p>
-    {% endif %}
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <h2>Nenhum evento encontrado</h2>
+          <p>Não há eventos correspondentes aos filtros selecionados.</p>
+        </div>
+      {% endif %}
+    </section>
+  </div>
 </body>
 </html>

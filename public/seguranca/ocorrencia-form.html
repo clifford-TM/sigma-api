@@ -1,158 +1,122 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<title>Nova Ocorrência</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Registrar ocorrência - SIGMA</title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/form.css" />
+  <script src="/static/js/form.js" defer></script>
 </head>
 
 <body>
+  <div class="form-page">
+    <main class="form-shell">
+      <header class="form-header">
+        <a href="/seguranca/ocorrencias" class="text-link">
+          ← Voltar para ocorrências
+        </a>
 
-<h1>Registrar Ocorrência</h1>
+        <div>
+          <p class="eyebrow">Segurança patrimonial</p>
+          <h1>Registrar ocorrência</h1>
+          <p class="subtitle">
+            Registre situações operacionais, inconsistências ou observações relacionadas aos ambientes.
+          </p>
+        </div>
+      </header>
 
-<p>Operador: {{ usuario.nome }}</p>
+      {% if erro %}
+        <div class="form-alert">
+          {{ erro }}
+        </div>
+      {% endif %}
 
-<nav>
-    <a href="/seguranca/dashboard">Dashboard</a> |
-    <a href="/seguranca/ocorrencias">Ocorrências</a> |
-    <a href="/logout">Sair</a>
-</nav>
+      <section class="section-card form-card">
+        <form method="POST" action="/seguranca/ocorrencias" class="sigma-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="tipo">Tipo</label>
+              <select id="tipo" name="tipo" required>
+                <option value="">Selecione</option>
+                <option value="chave_nao_devolvida">Chave não devolvida</option>
+                <option value="ambiente_irregular">Ambiente irregular</option>
+                <option value="sala_aberta">Sala aberta sem evento</option>
+                <option value="encerramento_contingencia">Encerramento por contingência</option>
+                <option value="observacao">Observação</option>
+                <option value="outro">Outro</option>
+              </select>
+            </div>
 
-<hr>
+            <div class="form-group">
+              <label for="severidade">Severidade</label>
+              <select id="severidade" name="severidade">
+                <option value="baixa">Baixa</option>
+                <option value="media" selected>Média</option>
+                <option value="alta">Alta</option>
+              </select>
+            </div>
 
-{% if erro %}
-<div style="color:red">
-{{ erro }}
-</div>
-<hr>
-{% endif %}
+            <div class="form-group form-group-full">
+              <label for="evento_id">Evento relacionado, se houver</label>
+              <select id="evento_id" name="evento_id">
+                <option value="0">Nenhum evento relacionado</option>
 
-<form method="POST" action="/seguranca/ocorrencias">
+                {% for evento in eventos %}
+                  <option value="{{ evento.id_evento }}">
+                    #{{ evento.id_evento }}
+                    —
+                    {{ evento.tipo }}
+                    —
+                    {{ evento.status }}
+                    —
+                    Sala {{ evento.sala_id }}
+                    —
+                    {{ evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") if evento.inicio_previsto else "sem data" }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
 
-<label>Tipo</label>
-<br>
+            <div class="form-group form-group-full">
+              <label for="sala_id">Sala relacionada, se houver</label>
+              <select id="sala_id" name="sala_id">
+                <option value="0">Nenhuma sala relacionada</option>
 
-<select name="tipo" required>
-<option value="">Selecione</option>
+                {% for sala in salas %}
+                  <option value="{{ sala.id_sala }}">
+                    Sala {{ sala.numero }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
 
-<option value="chave_nao_devolvida">
-Chave não devolvida
-</option>
+            <div class="form-group form-group-full">
+              <label for="descricao">Descrição / relatório</label>
+              <textarea
+                id="descricao"
+                name="descricao"
+                rows="10"
+                required
+                placeholder="Descreva a ocorrência ou relatório operacional..."
+              ></textarea>
+            </div>
+          </div>
 
-<option value="ambiente_irregular">
-Ambiente irregular
-</option>
+          <div class="form-actions">
+            <a href="/seguranca/ocorrencias" class="secondary-button">
+              Cancelar
+            </a>
 
-<option value="sala_aberta">
-Sala aberta sem evento
-</option>
-
-<option value="encerramento_contingencia">
-Encerramento por contingência
-</option>
-
-<option value="observacao">
-Observação
-</option>
-
-<option value="outro">
-Outro
-</option>
-
-</select>
-
-<br><br>
-
-<label>Evento (opcional)</label>
-<br>
-
-<select name="evento_id">
-
-<option value="0">
-Nenhum
-</option>
-
-{% for evento in eventos %}
-
-<option value="{{ evento.id_evento }}">
-    #{{ evento.id_evento }}
-    —
-    {{ evento.tipo }}
-    —
-    {{ evento.status }}
-    —
-    Sala {{ evento.sala_id }}
-    —
-    {{ evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") if evento.inicio_previsto else "sem data" }}
-</option>
-
-{% endfor %}
-
-</select>
-
-<br><br>
-
-<label>Sala (opcional)</label>
-<br>
-
-<select name="sala_id">
-
-<option value="0">
-Nenhuma
-</option>
-
-{% for sala in salas %}
-
-<option value="{{ sala.id_sala }}">
-Sala {{ sala.numero }}
-</option>
-
-{% endfor %}
-
-</select>
-
-<br><br>
-
-<label>Severidade</label>
-
-<br>
-
-<select name="severidade">
-
-<option value="baixa">
-Baixa
-</option>
-
-<option value="media" selected>
-Média
-</option>
-
-<option value="alta">
-Alta
-</option>
-
-</select>
-
-<br><br>
-
-<label>Descrição / Relatório</label>
-
-<br>
-
-<textarea
-name="descricao"
-rows="10"
-cols="80"
-required
-placeholder="Descreva a ocorrência ou relatório operacional..."
-></textarea>
-
-<br><br>
-
-<button type="submit">
-Registrar ocorrência
-</button>
-
-</form>
-
+            <button type="submit" class="primary-button">
+              Registrar ocorrência
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
 </body>
 </html>

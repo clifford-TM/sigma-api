@@ -3,6 +3,7 @@ import os
 from dotenv import load_dotenv
 from fastapi import FastAPI
 from starlette.middleware.sessions import SessionMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from app.routers import (admin, auth, materias, usuarios, professor, 
                          aluno, ambientes, dispositivos, 
@@ -12,7 +13,7 @@ from app.routers import (admin, auth, materias, usuarios, professor,
 load_dotenv()
 
 app = FastAPI(title="SIGMA")
-
+app.mount("/static", StaticFiles(directory="static"), name="static")
 app.add_middleware(
     SessionMiddleware,
     secret_key=os.getenv("SESSION_SECRET"),

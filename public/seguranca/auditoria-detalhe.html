@@ -1,152 +1,242 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Detalhes da auditoria - SIGMA</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Detalhes da auditoria - SIGMA</title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/list.css" />
+  <link rel="stylesheet" href="/static/css/detail.css" />
 </head>
+
 <body>
-    <h1>Detalhes da auditoria</h1>
+  <div class="detail-page">
+    <main class="detail-shell">
+      <header class="detail-header">
+        <div>
+          <p class="eyebrow">Auditoria de eventos</p>
+          <h1>Evento #{{ evento.id_evento }}</h1>
+          <p class="subtitle">
+            Detalhes operacionais, alertas, participantes e presenças registradas.
+          </p>
+        </div>
 
-    <p><a href="/seguranca/auditoria">Voltar para auditoria</a></p>
+        <a href="/seguranca/auditoria" class="secondary-button">
+          Voltar para auditoria
+        </a>
+      </header>
 
-    <h2>Evento #{{ evento.id_evento }}</h2>
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Dados do evento</h2>
+            <p>Informações principais do evento auditado.</p>
+          </div>
+        </div>
 
-    <table border="1" cellpadding="6">
-        <tr>
-            <th>Tipo</th>
-            <td>{{ evento.tipo }}</td>
-        </tr>
-        <tr>
-            <th>Status</th>
-            <td>{{ evento.status }}</td>
-        </tr>
-        <tr>
-            <th>Sala</th>
-            <td>
-                {% if evento.sala %}
-                    {{ evento.sala.numero }} — {{ evento.sala.tipo }}
-                {% else %}
-                    -
-                {% endif %}
-            </td>
-        </tr>
-        <tr>
-            <th>Responsável</th>
-            <td>{{ evento.host_usuario.nome if evento.host_usuario else "-" }}</td>
-        </tr>
-        <tr>
-            <th>Autorizado por</th>
-            <td>{{ evento.autorizado_por_usuario.nome if evento.autorizado_por_usuario else "-" }}</td>
-        </tr>
-        <tr>
-            <th>Forma de início</th>
-            <td>{{ evento.forma_inicio or "-" }}</td>
-        </tr>
-        <tr>
-            <th>Confirmado por RFID</th>
-            <td>{{ "Sim" if evento.confirmado_por_rfid else "Não" }}</td>
-        </tr>
-        <tr>
-            <th>Motivo de não realização</th>
-            <td>{{ evento.motivo_nao_realizacao or "-" }}</td>
-        </tr>
-        <tr>
-            <th>Descrição</th>
-            <td>{{ evento.descricao or "-" }}</td>
-        </tr>
-        <tr>
-            <th>Início previsto</th>
-            <td>{{ evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") if evento.inicio_previsto else "-" }}</td>
-        </tr>
-        <tr>
-            <th>Início real</th>
-            <td>{{ evento.inicio_real.strftime("%d/%m/%Y %H:%M") if evento.inicio_real else "-" }}</td>
-        </tr>
-        <tr>
-            <th>Fim previsto</th>
-            <td>{{ evento.fim_previsto.strftime("%d/%m/%Y %H:%M") if evento.fim_previsto else "-" }}</td>
-        </tr>
-        <tr>
-            <th>Fim real</th>
-            <td>{{ evento.fim_real.strftime("%d/%m/%Y %H:%M") if evento.fim_real else "-" }}</td>
-        </tr>
-    </table>
+        <div class="info-grid">
+          <div class="info-item">
+            <strong>Tipo</strong>
+            <span>{{ evento.tipo }}</span>
+          </div>
 
-    <h2>Alertas</h2>
+          <div class="info-item">
+            <strong>Status</strong>
+            <span class="status-badge status-{{ evento.status }}">
+              {{ evento.status }}
+            </span>
+          </div>
 
-    {% if alertas %}
-        <ul>
+          <div class="info-item">
+            <strong>Sala</strong>
+            <span>
+              {% if evento.sala %}
+                {{ evento.sala.numero }} — {{ evento.sala.tipo }}
+              {% else %}
+                -
+              {% endif %}
+            </span>
+          </div>
+
+          <div class="info-item">
+            <strong>Responsável</strong>
+            <span>{{ evento.host_usuario.nome if evento.host_usuario else "-" }}</span>
+          </div>
+
+          <div class="info-item">
+            <strong>Autorizado por</strong>
+            <span>{{ evento.autorizado_por_usuario.nome if evento.autorizado_por_usuario else "-" }}</span>
+          </div>
+
+          <div class="info-item">
+            <strong>Forma de início</strong>
+            <span>{{ evento.forma_inicio or "-" }}</span>
+          </div>
+
+          <div class="info-item">
+            <strong>Confirmado por RFID</strong>
+            <span>{{ "Sim" if evento.confirmado_por_rfid else "Não" }}</span>
+          </div>
+
+          <div class="info-item">
+            <strong>Motivo de não realização</strong>
+            <span>{{ evento.motivo_nao_realizacao or "-" }}</span>
+          </div>
+
+          <div class="info-item info-item-full">
+            <strong>Descrição</strong>
+            <span>{{ evento.descricao or "-" }}</span>
+          </div>
+
+          <div class="info-item">
+            <strong>Início previsto</strong>
+            <span>{{ evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") if evento.inicio_previsto else "-" }}</span>
+          </div>
+
+          <div class="info-item">
+            <strong>Início real</strong>
+            <span>{{ evento.inicio_real.strftime("%d/%m/%Y %H:%M") if evento.inicio_real else "-" }}</span>
+          </div>
+
+          <div class="info-item">
+            <strong>Fim previsto</strong>
+            <span>{{ evento.fim_previsto.strftime("%d/%m/%Y %H:%M") if evento.fim_previsto else "-" }}</span>
+          </div>
+
+          <div class="info-item">
+            <strong>Fim real</strong>
+            <span>{{ evento.fim_real.strftime("%d/%m/%Y %H:%M") if evento.fim_real else "-" }}</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Alertas</h2>
+            <p>Inconsistências ou pontos de atenção identificados na auditoria.</p>
+          </div>
+        </div>
+
+        {% if alertas %}
+          <div class="alert-list">
             {% for alerta in alertas %}
-                <li>{{ alerta }}</li>
+              <span class="alert-item">{{ alerta }}</span>
             {% endfor %}
-        </ul>
-    {% else %}
-        <p>Nenhum alerta encontrado.</p>
-    {% endif %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <h3>Nenhum alerta encontrado</h3>
+            <p>Não foram identificados pontos de atenção para este evento.</p>
+          </div>
+        {% endif %}
+      </section>
 
-    <h2>Linha do tempo</h2>
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Linha do tempo</h2>
+            <p>Sequência dos principais registros associados ao evento.</p>
+          </div>
+        </div>
 
-    {% if linha_do_tempo %}
-        <ol>
+        {% if linha_do_tempo %}
+          <div class="timeline">
             {% for item in linha_do_tempo %}
-                <li>
-                    <strong>{{ item.data_hora.strftime("%d/%m/%Y %H:%M:%S") if item.data_hora else "-" }}</strong>
-                    — {{ item.descricao }}
-                </li>
+              <div class="timeline-item">
+                <strong>
+                  {{ item.data_hora.strftime("%d/%m/%Y %H:%M:%S") if item.data_hora else "-" }}
+                </strong>
+                <span>{{ item.descricao }}</span>
+              </div>
             {% endfor %}
-        </ol>
-    {% else %}
-        <p>Nenhum registro na linha do tempo.</p>
-    {% endif %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <h3>Nenhum registro na linha do tempo</h3>
+            <p>Não há movimentações registradas para este evento.</p>
+          </div>
+        {% endif %}
+      </section>
 
-    <h2>Participantes esperados</h2>
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Participantes esperados</h2>
+            <p>Usuários previstos para participação neste evento.</p>
+          </div>
+        </div>
 
-    {% if participantes %}
-        <table border="1" cellpadding="6">
-            <thead>
+        {% if participantes %}
+          <div class="table-wrapper">
+            <table class="sigma-table compact-table">
+              <thead>
                 <tr>
-                    <th>Nome</th>
-                    <th>Papel</th>
+                  <th>Nome</th>
+                  <th>Papel</th>
                 </tr>
-            </thead>
-            <tbody>
+              </thead>
+
+              <tbody>
                 {% for ep, usuario in participantes %}
-                    <tr>
-                        <td>{{ usuario.nome }}</td>
-                        <td>{{ ep.papel }}</td>
-                    </tr>
+                  <tr>
+                    <td>{{ usuario.nome }}</td>
+                    <td>{{ ep.papel }}</td>
+                  </tr>
                 {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Nenhum participante esperado registrado.</p>
-    {% endif %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <h3>Nenhum participante esperado</h3>
+            <p>Este evento não possui participantes esperados registrados.</p>
+          </div>
+        {% endif %}
+      </section>
 
-    <h2>Presenças registradas</h2>
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Presenças registradas</h2>
+            <p>Entradas e saídas registradas durante o evento.</p>
+          </div>
+        </div>
 
-    {% if presencas %}
-        <table border="1" cellpadding="6">
-            <thead>
+        {% if presencas %}
+          <div class="table-wrapper">
+            <table class="sigma-table compact-table">
+              <thead>
                 <tr>
-                    <th>Usuário</th>
-                    <th>Tipo</th>
-                    <th>Origem</th>
-                    <th>Data/hora</th>
+                  <th>Usuário</th>
+                  <th>Tipo</th>
+                  <th>Origem</th>
+                  <th>Data/hora</th>
                 </tr>
-            </thead>
-            <tbody>
+              </thead>
+
+              <tbody>
                 {% for presenca, usuario in presencas %}
-                    <tr>
-                        <td>{{ usuario.nome }}</td>
-                        <td>{{ presenca.tipo }}</td>
-                        <td>{{ presenca.origem }}</td>
-                        <td>{{ presenca.data_hora.strftime("%d/%m/%Y %H:%M:%S") if presenca.data_hora else "-" }}</td>
-                    </tr>
+                  <tr>
+                    <td>{{ usuario.nome }}</td>
+                    <td>{{ presenca.tipo }}</td>
+                    <td>{{ presenca.origem }}</td>
+                    <td>{{ presenca.data_hora.strftime("%d/%m/%Y %H:%M:%S") if presenca.data_hora else "-" }}</td>
+                  </tr>
                 {% endfor %}
-            </tbody>
-        </table>
-    {% else %}
-        <p>Nenhuma presença registrada.</p>
-    {% endif %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <h3>Nenhuma presença registrada</h3>
+            <p>Não há registros de presença vinculados a este evento.</p>
+          </div>
+        {% endif %}
+      </section>
+    </main>
+  </div>
 </body>
 </html>

@@ -1,37 +1,110 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>{{ titulo }} - SIGMA</title>
-  </head>
-  <body>
-    <h1>{{ titulo }}</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <p>Bem-vindo, {{ usuario.nome }}</p>
-    <p>{{ descricao }}</p>
+  <title>{{ titulo }} - SIGMA</title>
 
-    <hr />
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+</head>
 
-    <h2>Ações rápidas</h2>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <img src="/static/img/sigma-logo-white.png" alt="SIGMA" />
+        </div>
 
-    <ul>
-      <li>
-        <a href="/eventos/novo">
-          Criar novo evento de {{ tipo_evento_principal }}
+        <div class="brand-info">
+          <div class="brand-title">SIGMA</div>
+          <div class="brand-subtitle">
+            Sistema de Gestão e Monitoramento de Ambientes
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="#" class="nav-link active">Dashboard</a>
+        <a href="/eventos/novo" class="nav-link">
+          Criar {{ tipo_evento_principal }}
         </a>
-      </li>
-      <li>
-        <a href="/eventos">
-          Ver meus eventos
-        </a>
-      </li>
-    </ul>
+        <a href="/eventos" class="nav-link">Meus eventos</a>
+      </nav>
 
-    <hr />
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="avatar">{{ usuario.nome[0] }}</div>
+          <div>
+            <strong>{{ usuario.nome }}</strong>
+            <span>{{ tipo_evento_principal|capitalize }}</span>
+          </div>
+        </div>
 
-    <p>
-      <a href="/logout">Sair</a>
-    </p>
-  </body>
+        <a href="/logout" class="logout-link">Sair</a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Dashboard operacional</p>
+          <h1>Olá, {{ usuario.nome }}</h1>
+          <p class="subtitle">{{ descricao }}</p>
+        </div>
+      </header>
+
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Ações rápidas</h2>
+            <p>Escolha uma das opções disponíveis para sua função.</p>
+          </div>
+        </div>
+
+        <div class="project-grid">
+          <article class="project-card">
+            <div class="project-top">
+              <div>
+                <h3>Criar novo evento</h3>
+                <p>
+                  Registre uma nova atividade de {{ tipo_evento_principal }}
+                  vinculada a um ambiente.
+                </p>
+              </div>
+
+              <span class="status-chip status-agendado">
+                Novo
+              </span>
+            </div>
+
+            <a href="/eventos/novo" class="primary-button full">
+              Criar {{ tipo_evento_principal }}
+            </a>
+          </article>
+
+          <article class="project-card">
+            <div class="project-top">
+              <div>
+                <h3>Meus eventos</h3>
+                <p>
+                  Consulte os eventos cadastrados, acompanhe status e registros.
+                </p>
+              </div>
+
+              <span class="status-chip status-finalizado">
+                Consulta
+              </span>
+            </div>
+
+            <a href="/eventos" class="secondary-button full">
+              Ver meus eventos
+            </a>
+          </article>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
 </html>

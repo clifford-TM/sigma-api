@@ -1,102 +1,201 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Validar inspeção - SIGMA</title>
-  </head>
-  <body>
-    <h1>Validar inspeção</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <p>Segurança: {{ usuario.nome }}</p>
+  <title>Validar inspeção - SIGMA</title>
 
-    <nav>
-      <a href="/seguranca/dashboard">Dashboard</a> |
-      <a href="/seguranca/validacoes">Validações</a> |
-      <a href="/seguranca/salas">Visão Geral das Salas</a> |
-      <a href="/logout">Sair</a>
-    </nav>
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/form.css" />
+  <script src="/static/js/form.js" defer></script>
+</head>
 
-    <hr />
+<body>
+  <div class="form-page">
+    <main class="form-shell">
 
-    <h2>Dados da inspeção</h2>
-
-    <p><strong>ID da inspeção:</strong> #{{ evento.id_evento }}</p>
-    <p><strong>Sala:</strong> {{ sala.numero if sala else "Não encontrada" }}</p>
-    <p><strong>Status atual:</strong> {{ evento.status }}</p>
-
-    {% if erro %}
-      <p style="color: red;">{{ erro }}</p>
-    {% endif %}
-
-    <hr />
-
-    <form action="/seguranca/validacoes/{{ evento.id_evento }}" method="post">
-
-      {% if is_pos_projeto %}
-        <h2>Validação pós-projeto</h2>
+      <header class="form-header">
+        <a href="/seguranca/validacoes" class="text-link">
+          ← Voltar para validações
+        </a>
 
         <div>
-          <label for="chave_devolvida">Chave devolvida?</label><br />
-          <select id="chave_devolvida" name="chave_devolvida" required>
-            <option value="">Selecione</option>
-            <option value="sim">Sim</option>
-            <option value="nao">Não</option>
-          </select>
-        </div>
+          <p class="eyebrow">Segurança patrimonial</p>
 
-        <br />
+          <h1>Validar inspeção</h1>
+
+          <p class="subtitle">
+            Registre o resultado da inspeção e eventuais ocorrências identificadas.
+          </p>
+        </div>
+      </header>
+
+      {% if erro %}
+        <div class="form-alert">
+          {{ erro }}
+        </div>
       {% endif %}
 
-      <h2>Considerações sobre a inspeção</h2>
+      <section class="section-card form-card">
+        <form
+          action="/seguranca/validacoes/{{ evento.id_evento }}"
+          method="post"
+          class="sigma-form"
+        >
 
-      <div>
-        <textarea
-          id="observacoes"
-          name="observacoes"
-          rows="5"
-          cols="70"
-          placeholder="Descreva o estado da sala, possíveis problemas, observações gerais..."
-          required
-        ></textarea>
-      </div>
+          <!-- DADOS DA INSPEÇÃO -->
 
-      <hr />
+          <div class="form-section-title">
+            <h2>Dados da inspeção</h2>
+            <p>Informações do evento em validação.</p>
+          </div>
 
-      <h2>Ocorrência (opcional)</h2>
+          <div class="form-grid">
 
-      <div>
-        <input type="checkbox" id="registrar_ocorrencia" name="registrar_ocorrencia" />
-        <label for="registrar_ocorrencia">Registrar ocorrência</label>
-      </div>
+            <div class="form-group">
+              <label>ID da inspeção</label>
+              <input
+                type="text"
+                value="#{{ evento.id_evento }}"
+                readonly
+              />
+            </div>
 
-      <br />
+            <div class="form-group">
+              <label>Sala</label>
+              <input
+                type="text"
+                value="{{ sala.numero if sala else 'Não encontrada' }}"
+                readonly
+              />
+            </div>
 
-      <div>
-        <label for="descricao_ocorrencia">Descrição da ocorrência</label><br />
-        <textarea
-          id="descricao_ocorrencia"
-          name="descricao_ocorrencia"
-          rows="4"
-          cols="60"
-          placeholder="Preencha apenas se houver ocorrência"
-        ></textarea>
-      </div>
+            <div class="form-group">
+              <label>Status atual</label>
+              <input
+                type="text"
+                value="{{ evento.status }}"
+                readonly
+              />
+            </div>
 
-      <br />
+          </div>
 
-      <div>
-        <label for="severidade">Severidade</label><br />
-        <select id="severidade" name="severidade">
-          <option value="baixa">Baixa</option>
-          <option value="media" selected>Média</option>
-          <option value="alta">Alta</option>
-        </select>
-      </div>
+          <div class="form-divider"></div>
 
-      <br />
+          <!-- VALIDAÇÃO -->
 
-      <button type="submit">Concluir validação</button>
-      <a href="/seguranca/validacoes">Voltar</a>
-    </form>
-  </body>
+          <div class="form-section-title">
+            <h2>Resultado da inspeção</h2>
+            <p>Registre as informações observadas durante a validação.</p>
+          </div>
+
+          <div class="form-grid">
+
+            {% if is_pos_projeto %}
+              <div class="form-group">
+                <label for="chave_devolvida">
+                  Chave devolvida?
+                </label>
+
+                <select
+                  id="chave_devolvida"
+                  name="chave_devolvida"
+                  required
+                >
+                  <option value="">Selecione</option>
+                  <option value="sim">Sim</option>
+                  <option value="nao">Não</option>
+                </select>
+              </div>
+            {% endif %}
+
+            <div class="form-group form-group-full">
+              <label for="observacoes">
+                Considerações da inspeção
+              </label>
+
+              <textarea
+                id="observacoes"
+                name="observacoes"
+                rows="6"
+                required
+                placeholder="Descreva o estado da sala, irregularidades encontradas, materiais deixados no ambiente ou observações gerais..."
+              ></textarea>
+            </div>
+
+          </div>
+
+          <div class="form-divider"></div>
+
+          <!-- OCORRÊNCIA -->
+
+          <div class="form-section-title">
+            <h2>Ocorrência (opcional)</h2>
+            <p>
+              Utilize esta seção apenas quando for necessário registrar uma ocorrência formal.
+            </p>
+          </div>
+
+          <div class="form-grid">
+
+            <div class="form-group form-group-full">
+              <label class="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="registrar_ocorrencia"
+                  name="registrar_ocorrencia"
+                />
+
+                <span>Registrar ocorrência associada</span>
+              </label>
+            </div>
+
+            <div class="form-group form-group-full">
+              <label for="descricao_ocorrencia">
+                Descrição da ocorrência
+              </label>
+
+              <textarea
+                id="descricao_ocorrencia"
+                name="descricao_ocorrencia"
+                rows="4"
+                placeholder="Preencha apenas se houver ocorrência."
+              ></textarea>
+            </div>
+
+            <div class="form-group">
+              <label for="severidade">
+                Severidade
+              </label>
+
+              <select
+                id="severidade"
+                name="severidade"
+              >
+                <option value="baixa">Baixa</option>
+                <option value="media" selected>Média</option>
+                <option value="alta">Alta</option>
+              </select>
+            </div>
+
+          </div>
+
+          <div class="form-actions">
+            <a href="/seguranca/validacoes" class="secondary-button">
+              Cancelar
+            </a>
+
+            <button type="submit" class="primary-button">
+              Concluir validação
+            </button>
+          </div>
+
+        </form>
+      </section>
+
+    </main>
+  </div>
+</body>
 </html>

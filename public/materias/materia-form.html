@@ -2,81 +2,136 @@
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>
         {% if materia %}
             Editar matéria
         {% else %}
             Nova matéria
         {% endif %}
+        - SIGMA
     </title>
+
+    <link rel="stylesheet" href="/static/css/dashboard.css">
+    <link rel="stylesheet" href="/static/css/form.css">
+    <script src="/static/js/form.js" defer></script>
 </head>
 <body>
-    <h1>
-        {% if materia %}
-            Editar matéria
-        {% else %}
-            Nova matéria
-        {% endif %}
-    </h1>
+    <div class="form-page">
+        <main class="form-shell">
 
-    {% if erro %}
-        <p style="color:red;">{{ erro }}</p>
-    {% endif %}
+            <header class="form-header">
+                <a href="/materias/" class="text-link">
+                    ← Voltar para matérias
+                </a>
 
-    <form method="post"
-          action="{% if materia %}/materias/{{ materia.id_materia }}/editar{% else %}/materias/nova{% endif %}">
+                <div>
+                    <p class="eyebrow">Estrutura acadêmica</p>
 
-        <label for="codigo">Código:</label><br>
-        <input
-            type="text"
-            id="codigo"
-            name="codigo"
-            value="{{ materia.codigo if materia else '' }}"
-            required
-        ><br><br>
+                    <h1>
+                        {% if materia %}
+                            Editar matéria
+                        {% else %}
+                            Nova matéria
+                        {% endif %}
+                    </h1>
 
-        <label for="nome">Nome:</label><br>
-        <input
-            type="text"
-            id="nome"
-            name="nome"
-            value="{{ materia.nome if materia else '' }}"
-            required
-        ><br><br>
+                    <p class="subtitle">
+                        Cadastre matérias e defina quais professores podem ministrá-las.
+                    </p>
+                </div>
+            </header>
 
-        <label for="professores_ids">
-            Professores que podem ministrar esta matéria:
-        </label><br>
+            {% if erro %}
+                <div class="form-alert">
+                    {{ erro }}
+                </div>
+            {% endif %}
 
-        <select
-            id="professores_ids"
-            name="professores_ids"
-            multiple
-            size="6"
-            style="min-width: 300px;"
-        >
-            {% for professor, usuario in professores %}
-                <option
-                    value="{{ professor.id_professor }}"
-                    {% if professores_selecionados and professor.id_professor in professores_selecionados %}
-                        selected
-                    {% endif %}
+            <section class="section-card form-card">
+                <form
+                    method="post"
+                    class="sigma-form"
+                    action="{% if materia %}/materias/{{ materia.id_materia }}/editar{% else %}/materias/nova{% endif %}"
                 >
-                    {{ usuario.nome }}
-                </option>
-            {% endfor %}
-        </select>
 
-        <br>
-        <small style="color:#555;">
-            Segure Ctrl (ou Cmd no Mac) para selecionar mais de um professor.
-        </small>
+                    <div class="form-grid">
 
-        <br><br>
+                        <div class="form-group">
+                            <label for="codigo">Código</label>
 
-        <button type="submit">Salvar</button>
-    </form>
+                            <input
+                                type="text"
+                                id="codigo"
+                                name="codigo"
+                                value="{{ materia.codigo if materia else '' }}"
+                                placeholder="Ex: BD001"
+                                required
+                            >
+                        </div>
 
-    <p><a href="/materias/">Voltar</a></p>
+                        <div class="form-group">
+                            <label for="nome">Nome</label>
+
+                            <input
+                                type="text"
+                                id="nome"
+                                name="nome"
+                                value="{{ materia.nome if materia else '' }}"
+                                placeholder="Ex: Banco de Dados"
+                                required
+                            >
+                        </div>
+
+                        <div class="form-group form-group-full">
+                            <label for="professores_ids">
+                                Professores habilitados
+                            </label>
+
+                            <select
+                                id="professores_ids"
+                                name="professores_ids"
+                                multiple
+                                class="multi-select"
+                            >
+                                {% for professor, usuario in professores %}
+                                    <option
+                                        value="{{ professor.id_professor }}"
+                                        {% if professores_selecionados and professor.id_professor in professores_selecionados %}
+                                            selected
+                                        {% endif %}
+                                    >
+                                        {{ usuario.nome }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+
+                            <small class="form-help">
+                                Segure Ctrl (Windows/Linux) ou Cmd (Mac) para selecionar múltiplos professores.
+                            </small>
+                        </div>
+
+                    </div>
+
+                    <div class="form-actions">
+                        <a href="/materias/" class="secondary-button">
+                            Cancelar
+                        </a>
+
+                        <button type="submit" class="primary-button">
+                            {% if materia %}
+                                Salvar alterações
+                            {% else %}
+                                Criar matéria
+                            {% endif %}
+                        </button>
+                    </div>
+
+                </form>
+            </section>
+
+        </main>
+    </div>
 </body>
 </html>

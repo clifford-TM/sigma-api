@@ -1,30 +1,96 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Reprovar projeto</title>
-  </head>
-  <body>
-    <h1>Reprovar projeto</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <p>Bem-vindo, {{ usuario.nome }}</p>
-    <p>Projeto #{{ evento.id_evento }}</p>
-    <p>{{ evento.descricao if evento.descricao else "Projeto sem descrição" }}</p>
+  <title>Reprovar projeto - SIGMA</title>
 
-    {% if erro %}
-      <p style="color: red;">{{ erro }}</p>
-    {% endif %}
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/form.css" />
 
-    <form method="post" action="/professor/projetos/{{ evento.id_evento }}/reprovar">
-      <div>
-        <label for="motivo">Justificativa</label><br />
-        <textarea id="motivo" name="motivo" rows="5" cols="60" required></textarea>
-      </div>
+  <script src="/static/js/form.js" defer></script>
+</head>
 
-      <br />
+<body>
+  <div class="form-page">
+    <div class="form-shell">
 
-      <button type="submit">Confirmar reprovação</button>
-      <a href="/professor/dashboard">Voltar</a>
-    </form>
-  </body>
+      <header class="form-header">
+        <div>
+          <p class="eyebrow">Professor responsável</p>
+
+          <h1>Reprovar projeto</h1>
+
+          <p class="subtitle">
+            Informe o motivo da reprovação para registrar a decisão.
+          </p>
+        </div>
+      </header>
+
+      <section class="section-card form-card">
+
+        <div class="form-summary">
+          <h2>Projeto #{{ evento.id_evento }}</h2>
+
+          <p>
+            {{ evento.descricao if evento.descricao else "Projeto sem descrição" }}
+          </p>
+        </div>
+
+        {% if erro %}
+          <div class="form-alert">
+            {{ erro }}
+          </div>
+        {% endif %}
+
+        <form
+          method="post"
+          action="/professor/projetos/{{ evento.id_evento }}/reprovar"
+          class="sigma-form"
+        >
+
+          <div class="form-group">
+            <label for="motivo">
+              Justificativa da reprovação
+            </label>
+
+            <textarea
+              id="motivo"
+              name="motivo"
+              rows="6"
+              required
+              placeholder="Explique ao aluno o motivo da reprovação do projeto..."
+            ></textarea>
+
+            <small class="form-help">
+              Esta justificativa ficará registrada no histórico do projeto.
+            </small>
+          </div>
+
+          <div class="form-actions">
+
+            <a
+              href="/professor/dashboard"
+              class="secondary-button"
+            >
+              Cancelar
+            </a>
+
+            <button
+              type="submit"
+              class="danger-button"
+            >
+              Confirmar reprovação
+            </button>
+
+          </div>
+
+        </form>
+
+      </section>
+
+    </div>
+  </div>
+</body>
 </html>

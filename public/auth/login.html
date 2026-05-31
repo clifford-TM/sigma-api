@@ -1,32 +1,68 @@
 <!doctype html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>SIGMA — Login</title>
-    <meta
-      name="description"
-      content="Acesso ao SIGMA — Sistema de Gerenciamento e Monitoramento de Ambientes"
-    />
-  </head>
-  <body>
-    <header role="banner">
-      <h1>SIGMA</h1>
-      <p>Sistema de Gerenciamento e Monitoramento de Ambientes</p>
-    </header>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <main role="main">
-      <section id="mensagens" aria-live="polite" aria-atomic="true">
-        {% if erro %}
-          <div class="erro">{{ erro }}</div>
-        {% endif %}
-      </section>
+  <title>SIGMA — Login</title>
 
-      <section aria-labelledby="titulo-credenciais">
-        <h2 id="titulo-credenciais">Entrar com credenciais</h2>
+  <meta
+    name="description"
+    content="Acesso ao SIGMA — Sistema de Gestão e Monitoramento de Ambientes"
+  />
+
+  <link rel="stylesheet" href="/static/css/login.css" />
+  <script src="/static/js/login.js" defer></script>
+</head>
+
+<body>
+  <main class="login-page">
+    <section class="login-hero" aria-label="Apresentação do SIGMA">
+      <div class="hero-brand">
+        <img
+          src="/static/img/sigma-logo-white.png"
+          alt="SIGMA"
+          class="hero-logo"
+        />
+
+        <div>
+          <h1>SIGMA</h1>
+          <p>Sistema de Gestão e Monitoramento de Ambientes</p>
+        </div>
+      </div>
+
+      <div class="hero-content">
+        <span class="hero-tag">Ambiente acadêmico inteligente</span>
+
+        <h2>Gerencie eventos, salas e acessos em um só lugar.</h2>
+
+        <p>
+          Plataforma para organização de atividades acadêmicas, controle de presença
+          e apoio ao monitoramento dos ambientes institucionais.
+        </p>
+      </div>
+
+      <footer class="hero-footer">
+        <small>SIGMA • Ambiente de testes</small>
+      </footer>
+    </section>
+
+    <section class="login-panel" aria-labelledby="titulo-credenciais">
+      <div class="login-card">
+        <div class="card-header">
+          <p class="eyebrow">Acesso ao sistema</p>
+          <h2 id="titulo-credenciais">Entrar com credenciais</h2>
+          <p>Use seu e-mail institucional para acessar o SIGMA.</p>
+        </div>
+
+        <section id="mensagens" aria-live="polite" aria-atomic="true">
+          {% if erro %}
+            <div class="alert-error">{{ erro }}</div>
+          {% endif %}
+        </section>
 
         <form id="login-form" method="post" action="/login" novalidate>
-          <div>
+          <div class="form-group">
             <label for="email">E-mail institucional</label>
             <input
               type="email"
@@ -34,11 +70,12 @@
               name="email"
               autocomplete="username"
               inputmode="email"
+              placeholder="seu.email@instituicao.com"
               required
             />
           </div>
 
-          <div>
+          <div class="form-group">
             <label for="senha">Senha</label>
             <input
               type="password"
@@ -46,47 +83,38 @@
               name="senha"
               autocomplete="current-password"
               minlength="6"
+              placeholder="Digite sua senha"
               required
             />
           </div>
 
-          <div>
-            <input type="checkbox" id="lembrar" name="remember" />
-            <label for="lembrar">Permanecer conectado</label>
+          <div class="form-row">
+            <label class="checkbox-field" for="lembrar">
+              <input type="checkbox" id="lembrar" name="remember" />
+              <span>Permanecer conectado</span>
+            </label>
+
+            <a href="#" class="text-link">Esqueci minha senha</a>
           </div>
 
-          <div>
-            <button type="submit">Entrar</button>
-          </div>
+          <button type="submit" class="primary-button">
+            Entrar
+          </button>
         </form>
-      </section>
 
-      <section aria-labelledby="titulo-rfid">
-        <h2 id="titulo-rfid">Entrar com RFID</h2>
-        <p>Autenticação por RFID ainda não está disponível nesta versão do protótipo.</p>
-      </section>
+        <nav class="support-nav" aria-label="Ações auxiliares">
+          <a href="#">Suporte</a>
+        </nav>
 
-      <nav aria-label="Ações auxiliares">
-        <ul>
-          <li><a href="#">Esqueci minha senha</a></li>
-          <li><a href="#">Suporte</a></li>
-        </ul>
-      </nav>
+        <noscript>
+          <p class="noscript-warning">Alguns recursos podem exigir JavaScript habilitado.</p>
+        </noscript>
+      </div>
 
-      <noscript>
-        <p>Alguns recursos podem exigir JavaScript habilitado.</p>
-      </noscript>
-    </main>
-
-    <footer role="contentinfo">
-      <small>© <span id="ano">2025</span> SIGMA • v0.1 • Ambiente de testes</small>
-    </footer>
-
-    <script>
-      (function () {
-        var el = document.getElementById("ano");
-        if (el) el.textContent = new Date().getFullYear();
-      })();
-    </script>
-  </body>
+      <footer class="page-footer" role="contentinfo">
+        <small>© <span id="ano">2025</span> SIGMA • v0.1</small>
+      </footer>
+    </section>
+  </main>
+</body>
 </html>

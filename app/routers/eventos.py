@@ -104,11 +104,11 @@ def tipos_permitidos_para_usuario(user_tipo: str) -> list[str]:
 
 def template_form_por_tipo(tipo: str) -> str:
     if tipo == "aula":
-        return "eventos/evento-aula.html"
+        return "eventos/evento-aula-form.html"
     if tipo == "projeto":
-        return "eventos/evento-projeto.html"
+        return "eventos/evento-projeto-form.html"
     if tipo in ["limpeza", "manutencao", "inspecao"]:
-        return "eventos/evento-operacional.html"
+        return "eventos/evento-operacional-form.html"
     return "eventos/evento-form.html"
 
 
@@ -156,11 +156,11 @@ def template_form_evento() -> str:
 
 
 def template_editar_evento() -> str:
-    return "eventos/evento-editar.html"
+    return "eventos/evento-editar-form.html"
 
 
 def template_cancelar_evento() -> str:
-    return "eventos/evento-cancelar.html"
+    return "eventos/evento-cancelar-form.html"
 
 
 def pode_iniciar_evento(evento: Evento) -> tuple[bool, str]:
@@ -723,7 +723,7 @@ def formulario_evento_recorrente(
 
     return templates.TemplateResponse(
         request=request,
-        name="eventos/evento-recorrente.html",
+        name="eventos/evento-recorrente-form.html",
         context={
             "usuario": current_user,
             "erro": None,

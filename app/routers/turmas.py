@@ -35,7 +35,7 @@ def listar_turmas(
 
     return templates.TemplateResponse(
         request=request,
-        name="turmas/index.html",
+        name="turmas/turmas-lista.html",
         context={
             "usuario": current_user,
             "turmas": turmas,
@@ -258,7 +258,7 @@ def gerenciar_turma(
 
     return templates.TemplateResponse(
         request=request,
-        name="turmas/gerenciar.html",
+        name="turmas/turma-gerenciar.html",
         context={
             "usuario": current_user,
             "turma": turma,

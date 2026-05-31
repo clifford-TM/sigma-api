@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Agendamento recorrente - SIGMA</title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/form.css" />
+  <script src="/static/js/form.js" defer></script>
+</head>
+
+<body>
+  <div class="form-page">
+    <main class="form-shell">
+      <header class="form-header">
+        <a href="/eventos/novo?tipo={{ valores.tipo }}" class="text-link">
+          ← Voltar para evento único
+        </a>
+
+        <div>
+          <p class="eyebrow">Agendamento recorrente</p>
+
+          <h1>
+            {% if valores.tipo == "limpeza" %}
+              Recorrência de limpeza
+            {% elif valores.tipo == "manutencao" %}
+              Recorrência de manutenção
+            {% elif valores.tipo == "inspecao" %}
+              Recorrência de inspeção
+            {% else %}
+              Evento recorrente
+            {% endif %}
+          </h1>
+
+          <p class="subtitle">
+            Configure um período, horário e dias da semana para gerar eventos automaticamente.
+          </p>
+        </div>
+      </header>
+
+      {% if erro %}
+        <div class="form-alert">
+          {{ erro }}
+        </div>
+      {% endif %}
+
+      <section class="section-card form-card">
+        <form method="POST" action="/eventos/recorrente" class="sigma-form">
+          <input type="hidden" name="tipo" value="{{ valores.tipo }}" />
+
+          <div class="form-grid">
+            <div class="form-group form-group-full">
+              <label for="sala_id">Sala</label>
+              <select id="sala_id" name="sala_id" required>
+                <option value="">Selecione</option>
+
+                {% for sala in salas %}
+                  <option value="{{ sala.id_sala }}">
+                    {{ sala.numero }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="data_inicio">Data inicial</label>
+              <input type="date" id="data_inicio" name="data_inicio" required />
+            </div>
+
+            <div class="form-group">
+              <label for="data_fim">Data final</label>
+              <input type="date" id="data_fim" name="data_fim" required />
+            </div>
+
+            <div class="form-group">
+              <label for="hora_inicio">Hora início</label>
+              <input type="time" id="hora_inicio" name="hora_inicio" required />
+            </div>
+
+            <div class="form-group">
+              <label for="hora_fim">Hora fim</label>
+              <input type="time" id="hora_fim" name="hora_fim" required />
+            </div>
+
+            <fieldset class="form-group form-group-full checkbox-group">
+              <legend>Dias da semana</legend>
+
+              <div class="weekday-grid">
+                <label class="checkbox-card">
+                  <input type="checkbox" name="dias_semana" value="0" />
+                  <span>Segunda</span>
+                </label>
+
+                <label class="checkbox-card">
+                  <input type="checkbox" name="dias_semana" value="1" />
+                  <span>Terça</span>
+                </label>
+
+                <label class="checkbox-card">
+                  <input type="checkbox" name="dias_semana" value="2" />
+                  <span>Quarta</span>
+                </label>
+
+                <label class="checkbox-card">
+                  <input type="checkbox" name="dias_semana" value="3" />
+                  <span>Quinta</span>
+                </label>
+
+                <label class="checkbox-card">
+                  <input type="checkbox" name="dias_semana" value="4" />
+                  <span>Sexta</span>
+                </label>
+
+                <label class="checkbox-card">
+                  <input type="checkbox" name="dias_semana" value="5" />
+                  <span>Sábado</span>
+                </label>
+
+                <label class="checkbox-card">
+                  <input type="checkbox" name="dias_semana" value="6" />
+                  <span>Domingo</span>
+                </label>
+              </div>
+            </fieldset>
+
+            <div class="form-group form-group-full">
+              <label for="descricao">Descrição / observações</label>
+              <textarea
+                id="descricao"
+                name="descricao"
+                rows="5"
+                placeholder="Inclua observações importantes sobre a recorrência"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <a href="/eventos/novo?tipo={{ valores.tipo }}" class="secondary-button">
+              Cancelar
+            </a>
+
+            <button type="submit" class="primary-button">
+              Gerar eventos recorrentes
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <section class="section-card helper-card">
+        <h2>Exemplo de recorrência</h2>
+
+        <p>
+          Para criar eventos durante todo o mês, selecione o período, marque os dias
+          desejados e informe o horário de início e fim.
+        </p>
+
+        <div class="example-grid">
+          <div>
+            <strong>Período</strong>
+            <span>01/06 → 30/06</span>
+          </div>
+
+          <div>
+            <strong>Dias</strong>
+            <span>Segunda, quarta e sexta</span>
+          </div>
+
+          <div>
+            <strong>Horário</strong>
+            <span>08:00 → 10:00</span>
+          </div>
+
+          <div>
+            <strong>Resultado</strong>
+            <span>Eventos criados automaticamente</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

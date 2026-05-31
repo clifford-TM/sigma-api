@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Dashboard da Segurança - SIGMA</title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+</head>
+
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <img src="/static/img/sigma-logo-white.png" alt="SIGMA" />
+        </div>
+
+        <div class="brand-info">
+          <div class="brand-title">SIGMA</div>
+          <div class="brand-subtitle">
+            Sistema de Gestão e Monitoramento de Ambientes
+          </div>
+        </div>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a href="/seguranca/dashboard" class="nav-link active">Dashboard</a>
+        <a href="/seguranca/salas" class="nav-link">Visão geral das salas</a>
+        <a href="/eventos" class="nav-link">Meus eventos</a>
+        <a href="/eventos/novo?tipo=inspecao" class="nav-link">Nova inspeção</a>
+        <a href="/seguranca/validacoes" class="nav-link">Validações</a>
+        <a href="/seguranca/ocorrencias" class="nav-link">Ocorrências</a>
+        <a href="/seguranca/auditoria" class="nav-link">Auditoria de eventos</a>
+        <a href="/seguranca/rfid" class="nav-link">Substituição RFID</a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="avatar">{{ usuario.nome[0] }}</div>
+          <div>
+            <strong>{{ usuario.nome }}</strong>
+            <span>Segurança</span>
+          </div>
+        </div>
+
+        <a href="/logout" class="logout-link">Sair</a>
+      </div>
+    </aside>
+
+    <main class="main-content">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Dashboard da segurança</p>
+          <h1>Olá, {{ usuario.nome }}</h1>
+          <p class="subtitle">
+            Acompanhe eventos, validações e atividades que exigem atenção operacional.
+          </p>
+        </div>
+      </header>
+
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Próximos eventos</h2>
+            <p>Atividades previstas nos ambientes monitorados.</p>
+          </div>
+        </div>
+
+        {% if proximos_eventos %}
+          <div class="event-list">
+            {% for evento in proximos_eventos %}
+              <article class="event-card">
+                <div class="event-icon">📅</div>
+
+                <div class="event-info">
+                  <h3>{{ evento.tipo|capitalize }}</h3>
+
+                  <p>
+                    Sala {{ salas[evento.sala_id].numero if evento.sala_id in salas else evento.sala_id }}
+                    •
+                    {{ evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") }}
+                    até
+                    {{ evento.fim_previsto.strftime("%H:%M") }}
+                    •
+                    Responsável:
+                    {{ usuarios[evento.host].nome if evento.host in usuarios else "Desconhecido" }}
+                  </p>
+                </div>
+
+                <span class="status-chip status-agendado">
+                  Agendado
+                </span>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <h3>Nenhum próximo evento</h3>
+            <p>Não há eventos previstos para acompanhamento no momento.</p>
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Eventos em andamento</h2>
+            <p>Eventos ativos que podem exigir acompanhamento da segurança.</p>
+          </div>
+        </div>
+
+        {% if eventos_em_andamento %}
+          <div class="event-list">
+            {% for evento in eventos_em_andamento %}
+              <article class="event-card active-event">
+                <div class="event-icon">▶</div>
+
+                <div class="event-info">
+                  <h3>{{ evento.tipo|capitalize }}</h3>
+
+                  <p>
+                    Sala {{ salas[evento.sala_id].numero if evento.sala_id in salas else evento.sala_id }}
+                    •
+                    Responsável:
+                    {{ usuarios[evento.host].nome if evento.host in usuarios else "Desconhecido" }}
+                  </p>
+                </div>
+
+                <span class="status-chip status-active">
+                  {{ evento.status }}
+                </span>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <h3>Nenhum evento em andamento</h3>
+            <p>Não há eventos ativos neste momento.</p>
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Inspeções automáticas pendentes</h2>
+            <p>Validações pós-projeto aguardando análise da segurança.</p>
+          </div>
+
+          <a href="/seguranca/validacoes" class="text-link">Ver todas</a>
+        </div>
+
+        {% if aguardando_validacao %}
+          <div class="project-grid">
+            {% for evento in aguardando_validacao %}
+              <article class="project-card">
+                <div class="project-top">
+                  <div>
+                    <h3>Inspeção automática</h3>
+
+                    <p>
+                      Sala {{ salas[evento.sala_id].numero if evento.sala_id in salas else evento.sala_id }}
+                    </p>
+
+                    <p>
+                      {{ evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") }}
+                      até
+                      {{ evento.fim_previsto.strftime("%H:%M") }}
+                    </p>
+
+                    <p>
+                      {{ evento.descricao if evento.descricao else "Validação pós-projeto" }}
+                    </p>
+                  </div>
+
+                  <span class="status-chip status-pendente">
+                    Pendente
+                  </span>
+                </div>
+
+                <a
+                  href="/seguranca/validacoes/{{ evento.id_evento }}"
+                  class="primary-button full"
+                >
+                  Validar inspeção
+                </a>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <h3>Nenhuma inspeção pendente</h3>
+            <p>Não há inspeções automáticas aguardando validação.</p>
+          </div>
+        {% endif %}
+      </section>
+    </main>
+  </div>
+</body>
+</html>

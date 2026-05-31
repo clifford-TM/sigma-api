@@ -1,109 +1,145 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Novo usuário - SIGMA</title>
-  </head>
-  <body>
-    <h1>Cadastrar usuário</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <p>Logado como {{ usuario.nome }} ({{ usuario.tipo }})</p>
+  <title>Novo usuário - SIGMA</title>
 
-    {% if erro %}
-      <p style="color: red;">{{ erro }}</p>
-    {% endif %}
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/form.css" />
+  <script src="/static/js/form.js" defer></script>
+</head>
 
-    <form action="/usuarios/" method="post">
-      <div>
-        <label for="nome">Nome</label>
-        <input type="text" id="nome" name="nome" value="{{ valores.nome if valores else '' }}" required />
-      </div>
+<body>
+  <div class="form-page">
+    <main class="form-shell">
+      <header class="form-header">
+        <a href="/usuarios" class="text-link">← Voltar para usuários</a>
 
-      <div>
-        <label for="tipo">Tipo</label>
-        <select id="tipo" name="tipo" required>
-          <option value="">Selecione</option>
-          {% for t in tipos %}
-            <option value="{{ t }}" {% if valores and valores.tipo == t %}selected{% endif %}>
-              {{ t }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
+        <div>
+          <p class="eyebrow">Administração de usuários</p>
+          <h1>Cadastrar usuário</h1>
+          <p class="subtitle">
+            Cadastre usuários e vincule permissões, turma e identificação RFID quando necessário.
+          </p>
+        </div>
+      </header>
 
-      <div id="campo_turma" style="display: none;">
-        <label for="turma_id">Turma do aluno</label>
-        <select id="turma_id" name="turma_id">
-          <option value="">Selecione</option>
-          {% for turma in turmas %}
-            <option
-              value="{{ turma.id_turma }}"
-              {% if valores and valores.turma_id == turma.id_turma %}selected{% endif %}
+      {% if erro %}
+        <div class="form-alert">
+          {{ erro }}
+        </div>
+      {% endif %}
+
+      <section class="section-card form-card">
+        <form action="/usuarios/" method="post" class="sigma-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="nome">Nome</label>
+              <input
+                type="text"
+                id="nome"
+                name="nome"
+                value="{{ valores.nome if valores else '' }}"
+                placeholder="Nome completo"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="tipo">Tipo</label>
+              <select id="tipo" name="tipo" required>
+                <option value="">Selecione</option>
+
+                {% for t in tipos %}
+                  <option
+                    value="{{ t }}"
+                    {% if valores and valores.tipo == t %}selected{% endif %}
+                  >
+                    {{ t }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div
+              id="campo_turma"
+              class="form-group form-group-full"
+              data-visible-when="aluno"
             >
-              {{ mapa_cursos.get(turma.curso_id, "Curso") }} -
-              {{ turma.semestre }}º semestre -
-              {{ turma.periodo|capitalize }} -
-              {{ turma.ano }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
+              <label for="turma_id">Turma do aluno</label>
+              <select id="turma_id" name="turma_id">
+                <option value="">Selecione</option>
 
-      <div>
-        <label for="email">E-mail</label>
-        <input type="email" id="email" name="email" value="{{ valores.email if valores else '' }}" required />
-      </div>
+                {% for turma in turmas %}
+                  <option
+                    value="{{ turma.id_turma }}"
+                    {% if valores and valores.turma_id == turma.id_turma %}selected{% endif %}
+                  >
+                    {{ mapa_cursos.get(turma.curso_id, "Curso") }}
+                    -
+                    {{ turma.semestre }}º semestre
+                    -
+                    {{ turma.periodo|capitalize }}
+                    -
+                    {{ turma.ano }}
+                  </option>
+                {% endfor %}
+              </select>
 
-      <div>
-        <label for="senha">Senha</label>
-        <input type="password" id="senha" name="senha" required />
-      </div>
+              <small class="form-help">
+                Este campo é obrigatório apenas para usuários do tipo aluno.
+              </small>
+            </div>
 
-      <div>
-        <label for="codigo_rfid">Código RFID</label>
-        <input
-          type="text"
-          id="codigo_rfid"
-          name="codigo_rfid"
-          value="{{ valores.codigo_rfid if valores else '' }}"
-          maxlength="24"
-          placeholder="Opcional no cadastro inicial"
-        />
-      </div>
+            <div class="form-group">
+              <label for="email">E-mail</label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value="{{ valores.email if valores else '' }}"
+                placeholder="email@instituicao.com"
+                required
+              />
+            </div>
 
-      <div>
-        <button type="submit">Salvar</button>
-      </div>
-    </form>
+            <div class="form-group">
+              <label for="senha">Senha</label>
+              <input
+                type="password"
+                id="senha"
+                name="senha"
+                placeholder="Senha inicial"
+                required
+              />
+            </div>
 
-    <p><a href="/usuarios">Voltar para usuários</a></p>
+            <div class="form-group form-group-full">
+              <label for="codigo_rfid">Código RFID</label>
+              <input
+                type="text"
+                id="codigo_rfid"
+                name="codigo_rfid"
+                value="{{ valores.codigo_rfid if valores else '' }}"
+                maxlength="24"
+                placeholder="Opcional no cadastro inicial"
+              />
 
-    <p>
-      <a href="/admin/dashboard">Dashboard</a>
-      <a href="/logout">Sair</a>
-    </p>
+              <small class="form-help">
+                O identificador RFID pode ser vinculado agora ou posteriormente pela segurança.
+              </small>
+            </div>
+          </div>
 
-    <script>
-      const tipoSelect = document.getElementById("tipo");
-      const campoTurma = document.getElementById("campo_turma");
-      const turmaSelect = document.getElementById("turma_id");
-
-      function atualizarCamposPorTipo() {
-        const tipo = tipoSelect.value;
-
-        if (tipo === "aluno") {
-          campoTurma.style.display = "block";
-          turmaSelect.required = true;
-        } else {
-          campoTurma.style.display = "none";
-          turmaSelect.required = false;
-          turmaSelect.value = "";
-        }
-      }
-
-      tipoSelect.addEventListener("change", atualizarCamposPorTipo);
-      atualizarCamposPorTipo();
-    </script>
-  </body>
+          <div class="form-actions">
+            <a href="/usuarios" class="secondary-button">Cancelar</a>
+            <button type="submit" class="primary-button">Salvar usuário</button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+</body>
 </html>

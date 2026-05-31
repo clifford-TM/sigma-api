@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Novo evento operacional - SIGMA</title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/form.css" />
+  <script src="/static/js/form.js" defer></script>
+</head>
+
+<body>
+  <div class="form-page">
+    <main class="form-shell">
+      <header class="form-header">
+        <a href="/eventos" class="text-link">
+          ← Voltar para eventos
+        </a>
+
+        <div>
+          <p class="eyebrow">Operações</p>
+
+          <h1>
+            {% if valores.tipo == "limpeza" %}
+              Nova limpeza
+            {% elif valores.tipo == "manutencao" %}
+              Nova manutenção
+            {% elif valores.tipo == "inspecao" %}
+              Nova inspeção
+            {% else %}
+              Novo evento operacional
+            {% endif %}
+          </h1>
+
+          <p class="subtitle">
+            {% if valores.tipo == "limpeza" %}
+              Agende atividades de limpeza vinculadas a um ambiente.
+            {% elif valores.tipo == "manutencao" %}
+              Registre uma atividade de manutenção programada.
+            {% elif valores.tipo == "inspecao" %}
+              Agende uma inspeção operacional do ambiente.
+            {% else %}
+              Cadastre um evento operacional.
+            {% endif %}
+          </p>
+        </div>
+      </header>
+
+      {% if erro %}
+        <div class="form-alert">
+          {{ erro }}
+        </div>
+      {% endif %}
+
+      <section class="section-card form-card">
+        <form method="post" action="/eventos" class="sigma-form">
+          <input
+            type="hidden"
+            name="tipo"
+            value="{{ valores.tipo }}"
+          />
+
+          <div class="form-grid">
+            <div class="form-group form-group-full">
+              <label for="sala_id">Sala</label>
+
+              <select id="sala_id" name="sala_id" required>
+                <option value="">Selecione</option>
+
+                {% for sala in salas %}
+                  <option
+                    value="{{ sala.id_sala }}"
+                    {% if valores and valores.sala_id == sala.id_sala %}selected{% endif %}
+                  >
+                    {{ sala.numero }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="inicio_previsto">Início previsto</label>
+
+              <input
+                type="datetime-local"
+                id="inicio_previsto"
+                name="inicio_previsto"
+                value="{{ valores.inicio_previsto if valores else '' }}"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="fim_previsto">Fim previsto</label>
+
+              <input
+                type="datetime-local"
+                id="fim_previsto"
+                name="fim_previsto"
+                value="{{ valores.fim_previsto if valores else '' }}"
+                required
+              />
+            </div>
+
+            <div class="form-group form-group-full">
+              <label for="descricao">
+                {% if valores.tipo == "limpeza" %}
+                  Observações da limpeza
+                {% elif valores.tipo == "manutencao" %}
+                  Descrição da manutenção
+                {% elif valores.tipo == "inspecao" %}
+                  Observações da inspeção
+                {% else %}
+                  Descrição
+                {% endif %}
+              </label>
+
+              <textarea
+                id="descricao"
+                name="descricao"
+                rows="4"
+              >{{ valores.descricao if valores else '' }}</textarea>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <a
+              href="/eventos/recorrente/novo?tipo={{ valores.tipo }}"
+              class="secondary-button"
+            >
+              Criar recorrência
+            </a>
+
+            <button type="submit" class="primary-button">
+              {% if valores.tipo == "limpeza" %}
+                Agendar limpeza
+              {% elif valores.tipo == "manutencao" %}
+                Agendar manutenção
+              {% elif valores.tipo == "inspecao" %}
+                Agendar inspeção
+              {% else %}
+                Agendar evento
+              {% endif %}
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

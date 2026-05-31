@@ -1,74 +1,133 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>
-        {% if turma %}
-            Editar turma
-        {% else %}
-            Nova turma
-        {% endif %}
-    </title>
-</head>
-<body>
-    <h1>
-        {% if turma %}
-            Editar turma
-        {% else %}
-            Nova turma
-        {% endif %}
-    </h1>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    {% if erro %}
-        <p style="color:red;">{{ erro }}</p>
+  <title>
+    {% if turma %}
+      Editar turma
+    {% else %}
+      Nova turma
     {% endif %}
+    - SIGMA
+  </title>
 
-    <form method="post"
-          action="{% if turma %}/turmas/{{ turma.id_turma }}/editar{% else %}/turmas/nova{% endif %}">
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/form.css" />
+  <script src="/static/js/form.js" defer></script>
+</head>
 
-        <label for="ano">Ano:</label><br>
-        <input
-            type="number"
-            id="ano"
-            name="ano"
-            min="2000"
-            max="2100"
-            value="{{ turma.ano if turma else '' }}"
-            required
-        ><br><br>
+<body>
+  <div class="form-page">
+    <main class="form-shell">
+      <header class="form-header">
+        <a href="/turmas/" class="text-link">← Voltar para turmas</a>
 
-        <label for="curso_id">Curso:</label><br>
-        <select id="curso_id" name="curso_id" required>
-            <option value="">Selecione</option>
-            {% for curso in cursos %}
-                <option value="{{ curso.id_curso }}"
-                    {% if turma and turma.curso_id == curso.id_curso %}selected{% endif %}>
+        <div>
+          <p class="eyebrow">Estrutura acadêmica</p>
+
+          <h1>
+            {% if turma %}
+              Editar turma
+            {% else %}
+              Nova turma
+            {% endif %}
+          </h1>
+
+          <p class="subtitle">
+            Cadastre turmas vinculando curso, período, semestre e ano letivo.
+          </p>
+        </div>
+      </header>
+
+      {% if erro %}
+        <div class="form-alert">
+          {{ erro }}
+        </div>
+      {% endif %}
+
+      <section class="section-card form-card">
+        <form
+          method="post"
+          class="sigma-form"
+          action="{% if turma %}/turmas/{{ turma.id_turma }}/editar{% else %}/turmas/nova{% endif %}"
+        >
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="ano">Ano</label>
+              <input
+                type="number"
+                id="ano"
+                name="ano"
+                min="2000"
+                max="2100"
+                value="{{ turma.ano if turma else '' }}"
+                placeholder="Ex: 2026"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="curso_id">Curso</label>
+              <select id="curso_id" name="curso_id" required>
+                <option value="">Selecione</option>
+
+                {% for curso in cursos %}
+                  <option
+                    value="{{ curso.id_curso }}"
+                    {% if turma and turma.curso_id == curso.id_curso %}selected{% endif %}
+                  >
                     {{ curso.nome }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label for="semestre">Semestre</label>
+              <input
+                type="number"
+                id="semestre"
+                name="semestre"
+                min="1"
+                max="12"
+                value="{{ turma.semestre if turma else '' }}"
+                placeholder="Ex: 4"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="periodo">Período</label>
+              <select id="periodo" name="periodo" required>
+                <option value="manha" {% if turma and turma.periodo == "manha" %}selected{% endif %}>
+                  Manhã
                 </option>
-            {% endfor %}
-        </select><br><br>
+                <option value="tarde" {% if turma and turma.periodo == "tarde" %}selected{% endif %}>
+                  Tarde
+                </option>
+                <option value="noite" {% if not turma or turma.periodo == "noite" %}selected{% endif %}>
+                  Noite
+                </option>
+              </select>
+            </div>
+          </div>
 
-        <label for="semestre">Semestre:</label><br>
-        <input
-            type="number"
-            id="semestre"
-            name="semestre"
-            min="1"
-            max="12"
-            value="{{ turma.semestre if turma else '' }}"
-            required
-        ><br><br>
+          <div class="form-actions">
+            <a href="/turmas/" class="secondary-button">Cancelar</a>
 
-        <label for="periodo">Período:</label><br>
-        <select id="periodo" name="periodo" required>
-            <option value="manha" {% if turma and turma.periodo == "manha" %}selected{% endif %}>Manhã</option>
-            <option value="tarde" {% if turma and turma.periodo == "tarde" %}selected{% endif %}>Tarde</option>
-            <option value="noite" {% if not turma or turma.periodo == "noite" %}selected{% endif %}>Noite</option>
-        </select><br><br>
-
-        <button type="submit">Salvar</button>
-    </form>
-
-    <p><a href="/turmas/">Voltar</a></p>
+            <button type="submit" class="primary-button">
+              {% if turma %}
+                Salvar alterações
+              {% else %}
+                Criar turma
+              {% endif %}
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
 </body>
 </html>

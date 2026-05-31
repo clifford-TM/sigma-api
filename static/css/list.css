@@ -1,0 +1,160 @@
+.list-page {
+  min-height: 100vh;
+  background: var(--bg);
+  padding: 36px;
+}
+
+.list-header {
+  width: min(100%, 1180px);
+  margin: 0 auto 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.list-page .section-card {
+  width: min(100%, 1180px);
+  margin: 0 auto;
+}
+
+.success-alert {
+  width: min(100%, 1180px);
+  margin: 0 auto 18px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  background: var(--green-bg);
+  color: var(--green-text);
+  font-weight: 700;
+  border: 1px solid #bbf7d0;
+}
+
+.table-wrapper {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.sigma-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 900px;
+}
+
+.sigma-table th,
+.sigma-table td {
+  padding: 14px 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+  font-size: 14px;
+}
+
+.sigma-table th {
+  color: var(--muted);
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  background: var(--surface-soft);
+}
+
+.sigma-table tbody tr:hover {
+  background: var(--surface-soft);
+}
+
+.status-badge {
+  display: inline-flex;
+  width: max-content;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.status-agendado {
+  background: var(--purple-bg);
+  color: var(--purple-text);
+}
+
+.status-ativo {
+  background: var(--green-bg);
+  color: var(--green-text);
+}
+
+.status-pendente,
+.status-pendente_aprovacao,
+.status-encerrando {
+  background: var(--yellow-bg);
+  color: var(--yellow-text);
+}
+
+.status-cancelado,
+.status-nao_realizado {
+  background: var(--red-bg);
+  color: var(--red-text);
+}
+
+.status-finalizado {
+  background: var(--green-bg);
+  color: var(--green-text);
+}
+
+.action-group {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-group .primary-button,
+.action-group .secondary-button,
+.action-group .danger-button {
+  padding: 8px 12px;
+  font-size: 13px;
+}
+
+.action-placeholder {
+  color: var(--muted);
+}
+
+.filter-card {
+  width: min(100%, 1180px);
+  margin: 0 auto 20px;
+}
+
+.filter-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 16px;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 10px;
+  align-items: end;
+}
+
+@media (max-width: 720px) {
+  .list-page {
+    padding: 24px 16px;
+  }
+
+  .list-header {
+    flex-direction: column;
+  }
+
+  .header-actions {
+    width: 100%;
+  }
+
+  .header-actions .primary-button,
+  .header-actions .secondary-button,
+  .header-actions .danger-button {
+    width: 100%;
+  }
+}

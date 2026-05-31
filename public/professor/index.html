@@ -3,161 +3,222 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+
   <title>Dashboard do Professor - SIGMA</title>
 
-  <script>
-    async function encerrarEvento(eventoId) {
-      try {
-        const resposta = await fetch(`/eventos/${eventoId}/disparar-fim`, {
-          method: "POST"
-        });
-
-        const dados = await resposta.json();
-
-        if (resposta.ok) {
-          alert(
-            "Pedido de encerramento enviado.\n\nAproxime novamente a tag do responsável no leitor RFID."
-          );
-          location.reload();
-        } else {
-          alert(
-            "Erro ao encerrar evento: " +
-              (dados.detail || "erro desconhecido")
-          );
-        }
-      } catch (erro) {
-        console.error(erro);
-        alert("Falha ao comunicar com o servidor.");
-      }
-    }
-  </script>
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <script src="/static/js/professor-dashboard.js" defer></script>
 </head>
 
 <body>
-  <h1>Dashboard do Professor</h1>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <img src="/static/img/sigma-logo-white.png" alt="SIGMA" />
+        </div>
 
-  <p>Bem-vindo, {{ usuario.nome }}</p>
+        <div class="brand-info">
+          <div class="brand-title">SIGMA</div>
+          <div class="brand-subtitle">
+            Sistema de Gestão e Monitoramento de Ambientes
+          </div>
+        </div>
+      </div>
 
-  <nav>
-    <a href="/eventos">Meus eventos</a>
-    |
-    <a href="/eventos/novo?tipo=aula">Nova aula</a>
-    |
-    <a href="/eventos/novo?tipo=projeto">Novo projeto</a>
-    |
-    <a href="/logout">Sair</a>
-  </nav>
+      <nav class="sidebar-nav">
+        <a href="/professor/dashboard" class="nav-link active">Dashboard</a>
+        <a href="/eventos" class="nav-link">Meus eventos</a>
+        <a href="/eventos/novo?tipo=aula" class="nav-link">Nova aula</a>
+        <a href="/eventos/novo?tipo=projeto" class="nav-link">Novo projeto</a>
+      </nav>
 
-  <hr />
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="avatar">{{ usuario.nome[0] }}</div>
+          <div>
+            <strong>{{ usuario.nome }}</strong>
+            <span>Professor</span>
+          </div>
+        </div>
 
-  <section>
-    <h2>Próximos eventos</h2>
+        <a href="/logout" class="logout-link">Sair</a>
+      </div>
+    </aside>
 
-    {% if proximos_eventos %}
-      <ul>
-        {% for evento in proximos_eventos %}
-          <li>
-            <strong>{{ evento.tipo|capitalize }}</strong>
+    <main class="main-content">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Dashboard do professor</p>
+          <h1>Olá, {{ usuario.nome }}</h1>
+          <p class="subtitle">
+            Acompanhe suas aulas, projetos e solicitações pendentes.
+          </p>
+        </div>
+      </header>
 
-            —
-            {% if evento.sala_id in salas %}
-              Sala {{ salas[evento.sala_id].numero }}
-            {% else %}
-              Sala {{ evento.sala_id }}
-            {% endif %}
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Próximos eventos</h2>
+            <p>Eventos agendados sob sua responsabilidade.</p>
+          </div>
+        </div>
 
-            — Status: {{ evento.status }}
+        {% if proximos_eventos %}
+          <div class="event-list">
+            {% for evento in proximos_eventos %}
+              <article class="event-card">
+                <div class="event-icon">📅</div>
 
-            {% if evento.inicio_previsto %}
-              — Início previsto: {{ evento.inicio_previsto }}
-            {% endif %}
+                <div class="event-info">
+                  <h3>{{ evento.tipo|capitalize }}</h3>
 
-            <form action="/eventos/{{ evento.id_evento }}/iniciar" method="post" style="display:inline;">
-              <button type="submit">Iniciar evento</button>
-            </form>
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>Nenhum evento agendado no momento.</p>
-    {% endif %}
-  </section>
+                  <p>
+                    {% if evento.sala_id in salas %}
+                      Sala {{ salas[evento.sala_id].numero }}
+                    {% else %}
+                      Sala {{ evento.sala_id }}
+                    {% endif %}
 
-  <hr />
+                    {% if evento.inicio_previsto %}
+                      • Início previsto: {{ evento.inicio_previsto }}
+                    {% endif %}
+                  </p>
+                </div>
 
-  <section>
-    <h2>Eventos em andamento</h2>
+                <span class="status-chip status-{{ evento.status }}">
+                  {{ evento.status }}
+                </span>
 
-    {% if eventos_em_andamento %}
-      <ul>
-        {% for evento in eventos_em_andamento %}
-          <li>
-            <strong>{{ evento.tipo|capitalize }}</strong>
+                <form action="/eventos/{{ evento.id_evento }}/iniciar" method="post">
+                  <button type="submit" class="primary-button">
+                    Iniciar evento
+                  </button>
+                </form>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <h3>Nenhum evento agendado</h3>
+            <p>Você não possui eventos futuros no momento.</p>
+          </div>
+        {% endif %}
+      </section>
 
-            —
-            {% if evento.sala_id in salas %}
-              Sala {{ salas[evento.sala_id].numero }}
-            {% else %}
-              Sala {{ evento.sala_id }}
-            {% endif %}
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Eventos em andamento</h2>
+            <p>Eventos ativos que podem ser encerrados após confirmação.</p>
+          </div>
+        </div>
 
-            — Status: {{ evento.status }}
+        {% if eventos_em_andamento %}
+          <div class="event-list">
+            {% for evento in eventos_em_andamento %}
+              <article class="event-card active-event">
+                <div class="event-icon">▶</div>
 
-            {% if evento.inicio_real %}
-              — Iniciado em: {{ evento.inicio_real }}
-            {% endif %}
+                <div class="event-info">
+                  <h3>{{ evento.tipo|capitalize }}</h3>
 
-            <button
-              type="button"
-              onclick="encerrarEvento({{ evento.id_evento }})"
-            >
-              Encerrar evento
-            </button>
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>Não há eventos em andamento.</p>
-    {% endif %}
-  </section>
+                  <p>
+                    {% if evento.sala_id in salas %}
+                      Sala {{ salas[evento.sala_id].numero }}
+                    {% else %}
+                      Sala {{ evento.sala_id }}
+                    {% endif %}
 
-  <hr />
+                    {% if evento.inicio_real %}
+                      • Iniciado em: {{ evento.inicio_real }}
+                    {% endif %}
+                  </p>
+                </div>
 
-  <section>
-    <h2>Projetos pendentes de aprovação</h2>
+                <span class="status-chip status-active">
+                  {{ evento.status }}
+                </span>
 
-    {% if projetos_pendentes %}
-      <ul>
-        {% for projeto in projetos_pendentes %}
-          <li>
-            <strong>
-              {{ projeto.descricao if projeto.descricao else "Projeto sem descrição" }}
-            </strong>
+                <button
+                  type="button"
+                  class="secondary-button"
+                  data-evento-id="{{ evento.id_evento }}"
+                  data-action="encerrar-evento"
+                >
+                  Encerrar evento
+                </button>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <h3>Nenhum evento em andamento</h3>
+            <p>Não há eventos ativos sob sua responsabilidade agora.</p>
+          </div>
+        {% endif %}
+      </section>
 
-            —
-            {% if projeto.sala_id in salas %}
-              Sala {{ salas[projeto.sala_id].numero }}
-            {% else %}
-              Sala {{ projeto.sala_id }}
-            {% endif %}
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Projetos pendentes de aprovação</h2>
+            <p>Solicitações de projeto aguardando sua análise.</p>
+          </div>
+        </div>
 
-            — Status: {{ projeto.status }}
+        {% if projetos_pendentes %}
+          <div class="project-grid">
+            {% for projeto in projetos_pendentes %}
+              <article class="project-card">
+                <div class="project-top">
+                  <div>
+                    <h3>
+                      {{ projeto.descricao if projeto.descricao else "Projeto sem descrição" }}
+                    </h3>
 
-            <a href="/professor/projetos/{{ projeto.id_evento }}/aprovar">
-              Aprovar
-            </a>
+                    <p>
+                      Sala:
+                      {% if projeto.sala_id in salas %}
+                        {{ salas[projeto.sala_id].numero }}
+                      {% else %}
+                        {{ projeto.sala_id }}
+                      {% endif %}
+                    </p>
+                  </div>
 
-            |
+                  <span class="status-chip status-{{ projeto.status }}">
+                    {{ projeto.status }}
+                  </span>
+                </div>
 
-            <a href="/professor/projetos/{{ projeto.id_evento }}/reprovar">
-              Reprovar
-            </a>
-          </li>
-        {% endfor %}
-      </ul>
-    {% else %}
-      <p>Não há projetos pendentes de aprovação.</p>
-    {% endif %}
-  </section>
+                <div class="action-row">
+                  <a
+                    href="/professor/projetos/{{ projeto.id_evento }}/aprovar"
+                    class="primary-button"
+                  >
+                    Aprovar
+                  </a>
+
+                  <a
+                    href="/professor/projetos/{{ projeto.id_evento }}/reprovar"
+                    class="secondary-button"
+                  >
+                    Reprovar
+                  </a>
+                </div>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <h3>Nenhum projeto pendente</h3>
+            <p>Não há solicitações aguardando aprovação no momento.</p>
+          </div>
+        {% endif %}
+      </section>
+    </main>
+  </div>
 </body>
 </html>

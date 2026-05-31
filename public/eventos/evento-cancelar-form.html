@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>
+    {% if usuario.tipo == "aluno" %}
+      Cancelar projeto - SIGMA
+    {% else %}
+      Cancelar evento - SIGMA
+    {% endif %}
+  </title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/form.css" />
+  <script src="/static/js/form.js" defer></script>
+</head>
+
+<body>
+  <div class="form-page">
+    <main class="form-shell">
+      <header class="form-header">
+        <a href="/eventos" class="text-link">← Voltar para eventos</a>
+
+        <div>
+          <p class="eyebrow">Cancelamento</p>
+
+          <h1>
+            {% if usuario.tipo == "aluno" %}
+              Cancelar projeto
+            {% else %}
+              Cancelar evento
+            {% endif %}
+          </h1>
+
+          <p class="subtitle">
+            Informe uma justificativa para registrar o cancelamento.
+          </p>
+        </div>
+      </header>
+
+      {% if erro %}
+        <div class="form-alert">
+          {{ erro }}
+        </div>
+      {% endif %}
+
+      <section class="section-card form-card">
+        <div class="form-summary">
+          <span class="status-chip status-cancelado">
+            {% if usuario.tipo == "aluno" %}
+              Projeto #{{ evento.id_evento }}
+            {% else %}
+              Evento #{{ evento.id_evento }}
+            {% endif %}
+          </span>
+
+          <h2>{{ evento.tipo|capitalize }}</h2>
+
+          {% if evento.descricao %}
+            <p>{{ evento.descricao }}</p>
+          {% else %}
+            <p>Sem descrição cadastrada.</p>
+          {% endif %}
+        </div>
+
+        <form
+          method="post"
+          action="/eventos/{{ evento.id_evento }}/cancelar"
+          class="sigma-form"
+        >
+          <div class="form-grid">
+            <div class="form-group form-group-full">
+              <label for="motivo">Justificativa</label>
+
+              <textarea
+                id="motivo"
+                name="motivo"
+                rows="5"
+                required
+                placeholder="Explique brevemente o motivo do cancelamento"
+              ></textarea>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <a href="/eventos" class="secondary-button">Voltar</a>
+
+            <button type="submit" class="danger-button">
+              Confirmar cancelamento
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

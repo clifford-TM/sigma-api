@@ -1,109 +1,162 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Dashboard do Aluno - SIGMA</title>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <script>
-      async function solicitarSaida(eventoId) {
-        try {
-          const resposta = await fetch(`/eventos/${eventoId}/solicitar-saida`, {
-            method: "POST"
-          });
+  <title>Dashboard do Aluno - SIGMA</title>
 
-          const dados = await resposta.json();
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+</head>
 
-          if (resposta.ok) {
-            alert(dados.mensagem || "Pedido de saída enviado. Aproxime sua tag no leitor RFID.");
-            location.reload();
-          } else {
-            alert("Erro ao solicitar saída: " + (dados.detail || "erro desconhecido"));
-          }
-        } catch (erro) {
-          console.error(erro);
-          alert("Falha ao comunicar com o servidor.");
-        }
-      }
-    </script>
-  </head>
+<body>
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+            <img
+                src="/static/img/sigma-logo-white.png"
+                alt="SIGMA"
+            >
+        </div>
 
-  <body>
-    <h1>Dashboard do Aluno</h1>
+        <div class="brand-info">
+            <div class="brand-title">SIGMA</div>
+            <div class="brand-subtitle">
+                Sistema de Gestão e Monitoramento de Ambientes
+            </div>
+        </div>
+    </div>
 
-    <p>Bem-vindo, {{ usuario.nome }}</p>
+      <nav class="sidebar-nav">
+        <a href="/aluno/dashboard" class="nav-link active">Dashboard</a>
+        <a href="/eventos" class="nav-link">Meus projetos</a>
+        <a href="/eventos/novo?tipo=projeto" class="nav-link">Solicitar projeto</a>
+      </nav>
 
-    <nav>
-      <a href="/eventos">Meus projetos</a>
-      |
-      <a href="/eventos/novo?tipo=projeto">Solicitar projeto</a>
-      |
-      <a href="/logout">Sair</a>
-    </nav>
+      <div class="sidebar-footer">
+        <div class="user-card">
+          <div class="avatar">{{ usuario.nome[0] }}</div>
+          <div>
+            <strong>{{ usuario.nome }}</strong>
+            <span>Aluno</span>
+          </div>
+        </div>
 
-    <hr />
+        <a href="/logout" class="logout-link">Sair</a>
+      </div>
+    </aside>
 
-    <section>
-      <h2>Eventos em andamento</h2>
+    <main class="main-content">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Dashboard do aluno</p>
+          <h1>Olá, {{ usuario.nome }}</h1>
+          <p class="subtitle">Acompanhe seus eventos, projetos solicitados e ações disponíveis.</p>
+        </div>
 
-      {% if eventos_em_andamento %}
-        <ul>
-          {% for evento in eventos_em_andamento %}
-            <li>
-              <strong>{{ evento.tipo|capitalize }}</strong>
-              —
-              {% if evento.sala_id in salas %}
-                Sala {{ salas[evento.sala_id].numero }}
-              {% else %}
-                Sala não encontrada
-              {% endif %}
-              — Status: {{ evento.status }}
+      </header>
 
-              <button type="button" onclick="solicitarSaida({{ evento.id_evento }})">
-                Solicitar saída antecipada
-              </button>
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p>Você não está participando de nenhum evento em andamento.</p>
-      {% endif %}
-    </section>
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Eventos em andamento</h2>
+            <p>Atividades nas quais você está participando agora.</p>
+          </div>
+        </div>
 
-    <hr />
+        {% if eventos_em_andamento %}
+          <div class="event-list">
+            {% for evento in eventos_em_andamento %}
+              <article class="event-card active-event">
+                <div class="event-icon">▶</div>
 
-    <section>
-      <h2>Projetos solicitados</h2>
+                <div class="event-info">
+                  <h3>{{ evento.tipo|capitalize }}</h3>
 
-      {% if projetos %}
-        <ul>
-          {% for projeto in projetos %}
-            <li>
-              <strong>{{ projeto.descricao if projeto.descricao else "Projeto sem descrição" }}</strong>
-              — Sala:
-              {% if projeto.sala_id in salas %}
-                {{ salas[projeto.sala_id].numero }}
-              {% else %}
-                Sala não encontrada
-              {% endif %}
-              — Professor:
-              {% if projeto.autorizado_por in professores %}
-                {{ professores[projeto.autorizado_por].nome }}
-              {% else %}
-                Não definido
-              {% endif %}
-              — Status: {{ projeto.status }}
+                  <p>
+                    {% if evento.sala_id in salas %}
+                      Sala {{ salas[evento.sala_id].numero }}
+                    {% else %}
+                      Sala não encontrada
+                    {% endif %}
+                  </p>
+                </div>
 
-              {% if projeto.status == "agendado" %}
-                <form action="/eventos/{{ projeto.id_evento }}/iniciar" method="post" style="display:inline;">
-                  <button type="submit">Iniciar projeto</button>
-                </form>
-              {% endif %}
-            </li>
-          {% endfor %}
-        </ul>
-      {% else %}
-        <p>Você ainda não possui projetos solicitados.</p>
-      {% endif %}
-    </section>
-  </body>
+                <span class="status-chip status-active">
+                  {{ evento.status }}
+                </span>
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <h3>Nenhum evento em andamento</h3>
+            <p>Você não está participando de nenhum evento no momento.</p>
+          </div>
+        {% endif %}
+      </section>
+
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Projetos solicitados</h2>
+            <p>Veja o andamento dos projetos que você cadastrou.</p>
+          </div>
+
+          <a href="/eventos" class="text-link">Ver todos</a>
+        </div>
+
+        {% if projetos %}
+          <div class="project-grid">
+            {% for projeto in projetos %}
+              <article class="project-card">
+                <div class="project-top">
+                  <div>
+                    <h3>{{ projeto.descricao if projeto.descricao else "Projeto sem descrição" }}</h3>
+
+                    <p>
+                      Sala:
+                      {% if projeto.sala_id in salas %}
+                        {{ salas[projeto.sala_id].numero }}
+                      {% else %}
+                        Sala não encontrada
+                      {% endif %}
+                    </p>
+
+                    <p>
+                      Professor:
+                      {% if projeto.autorizado_por in professores %}
+                        {{ professores[projeto.autorizado_por].nome }}
+                      {% else %}
+                        Não definido
+                      {% endif %}
+                    </p>
+                  </div>
+
+                  <span class="status-chip status-{{ projeto.status }}">
+                    {{ projeto.status }}
+                  </span>
+                </div>
+
+                {% if projeto.status == "agendado" %}
+                  <form action="/eventos/{{ projeto.id_evento }}/iniciar" method="post">
+                    <button type="submit" class="primary-button full">
+                      Iniciar projeto
+                    </button>
+                  </form>
+                {% endif %}
+              </article>
+            {% endfor %}
+          </div>
+        {% else %}
+          <div class="empty-state">
+            <h3>Você ainda não possui projetos cadastrados</h3>
+            <p>Utilize a opção “Solicitar projeto” no menu lateral para reservar uma sala e aguardar aprovação.</p>
+          </div>
+        {% endif %}
+      </section>
+    </main>
+  </div>
+</body>
 </html>

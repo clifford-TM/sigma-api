@@ -1,85 +1,124 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Relatórios de inspeção - SIGMA</title>
-  </head>
-  <body>
-    <h1>Relatórios de inspeção pendentes</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <p>Bem-vindo, {{ usuario.nome }}</p>
+  <title>Relatórios de inspeção - SIGMA</title>
 
-    <nav>
-      <a href="/seguranca/dashboard">Dashboard</a> |
-      <a href="/seguranca/salas">Visão Geral das Salas</a> |
-      <a href="/eventos/novo?tipo=inspecao">Nova Inspeção</a> |
-      <a href="/logout">Sair</a>
-    </nav>
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/list.css" />
+  <script src="/static/js/list.js" defer></script>
+</head>
 
-    <hr />
+<body>
+  <div class="list-page">
+    <header class="list-header">
+      <div>
+        <p class="eyebrow">Segurança patrimonial</p>
+        <h1>Relatórios de inspeção pendentes</h1>
+        <p class="subtitle">
+          Consulte inspeções pendentes e preencha relatórios de validação dos ambientes.
+        </p>
+      </div>
 
-    {% if eventos %}
-      <table border="1" cellpadding="8">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Origem</th>
-            <th>Sala</th>
-            <th>Responsável</th>
-            <th>Status</th>
-            <th>Horário</th>
-            <th>Descrição</th>
-            <th>Ação</th>
-          </tr>
-        </thead>
-        <tbody>
-          {% for evento in eventos %}
-            <tr>
-              <td>{{ evento.id_evento }}</td>
+      <div class="header-actions">
+        <a href="/seguranca/dashboard" class="secondary-button">
+          Dashboard
+        </a>
 
-              <td>
-                {% if evento.id_evento in ids_inspecoes_automaticas %}
-                  Automática pós-projeto
-                {% else %}
-                  Manual agendada
-                {% endif %}
-              </td>
+        <a href="/eventos/novo?tipo=inspecao" class="primary-button">
+          Nova inspeção
+        </a>
+      </div>
+    </header>
 
-              <td>
-                {% if evento.sala_id in salas %}
-                  {{ salas[evento.sala_id].numero }}
-                {% else %}
-                  Sala {{ evento.sala_id }}
-                {% endif %}
-              </td>
+    <section class="section-card">
+      {% if eventos %}
+        <div class="table-wrapper">
+          <table class="sigma-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Origem</th>
+                <th>Sala</th>
+                <th>Responsável</th>
+                <th>Status</th>
+                <th>Horário</th>
+                <th>Descrição</th>
+                <th>Ação</th>
+              </tr>
+            </thead>
 
-              <td>
-                {% if evento.host in usuarios %}
-                  {{ usuarios[evento.host].nome }}
-                {% else %}
-                  Usuário {{ evento.host }}
-                {% endif %}
-              </td>
+            <tbody>
+              {% for evento in eventos %}
+                <tr>
+                  <td>#{{ evento.id_evento }}</td>
 
-              <td>{{ evento.status }}</td>
+                  <td>
+                    {% if evento.id_evento in ids_inspecoes_automaticas %}
+                      <span class="status-badge status-pendente">
+                        Automática pós-projeto
+                      </span>
+                    {% else %}
+                      <span class="status-badge status-agendado">
+                        Manual agendada
+                      </span>
+                    {% endif %}
+                  </td>
 
-              <td>
-                {{ evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") }}
-                até
-                {{ evento.fim_previsto.strftime("%H:%M") }}
-              </td>
+                  <td>
+                    {% if evento.sala_id in salas %}
+                      {{ salas[evento.sala_id].numero }}
+                    {% else %}
+                      Sala {{ evento.sala_id }}
+                    {% endif %}
+                  </td>
 
-              <td>{{ evento.descricao if evento.descricao else "Inspeção sem descrição" }}</td>
+                  <td>
+                    {% if evento.host in usuarios %}
+                      {{ usuarios[evento.host].nome }}
+                    {% else %}
+                      Usuário {{ evento.host }}
+                    {% endif %}
+                  </td>
 
-              <td>
-                <a href="/seguranca/validacoes/{{ evento.id_evento }}">Preencher relatório</a>
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p>Não há relatórios de inspeção pendentes.</p>
-    {% endif %}
-  </body>
+                  <td>
+                    <span class="status-badge status-{{ evento.status }}">
+                      {{ evento.status }}
+                    </span>
+                  </td>
+
+                  <td>
+                    {{ evento.inicio_previsto.strftime("%d/%m/%Y %H:%M") }}
+                    até
+                    {{ evento.fim_previsto.strftime("%H:%M") }}
+                  </td>
+
+                  <td>
+                    {{ evento.descricao if evento.descricao else "Inspeção sem descrição" }}
+                  </td>
+
+                  <td>
+                    <a
+                      href="/seguranca/validacoes/{{ evento.id_evento }}"
+                      class="primary-button"
+                    >
+                      Preencher relatório
+                    </a>
+                  </td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      {% else %}
+        <div class="empty-state">
+          <h2>Nenhum relatório pendente</h2>
+          <p>Não há relatórios de inspeção aguardando preenchimento no momento.</p>
+        </div>
+      {% endif %}
+    </section>
+  </div>
+</body>
 </html>

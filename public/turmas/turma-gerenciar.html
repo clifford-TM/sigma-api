@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Gerenciar turma - SIGMA</title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/form.css" />
+  <link rel="stylesheet" href="/static/css/list.css" />
+  <link rel="stylesheet" href="/static/css/detail.css" />
+
+  <script src="/static/js/form.js" defer></script>
+</head>
+
+<body>
+  <div class="detail-page">
+    <main class="detail-shell">
+      <header class="detail-header">
+        <div>
+          <p class="eyebrow">Gerenciamento de turma</p>
+
+          <h1>
+            {{ curso.codigo }} - {{ curso.nome }}
+          </h1>
+
+          <p class="subtitle">
+            Ano {{ turma.ano }} • {{ turma.semestre }}º semestre
+          </p>
+        </div>
+
+        <a href="/turmas/" class="secondary-button">
+          Voltar para turmas
+        </a>
+      </header>
+
+      <section class="section-card">
+        <div class="section-header">
+          <div>
+            <h2>Professores por matéria</h2>
+            <p>
+              Defina o professor responsável por cada matéria da turma.
+            </p>
+          </div>
+        </div>
+
+        <form
+          method="post"
+          action="/turmas/{{ turma.id_turma }}/gerenciar"
+          class="sigma-form"
+        >
+          {% if grade %}
+            <div class="table-wrapper">
+              <table class="sigma-table">
+                <thead>
+                  <tr>
+                    <th>Matéria</th>
+                    <th>Professor responsável</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {% for item, materia in grade %}
+                    <tr>
+                      <td>
+                        <strong>{{ materia.codigo }}</strong>
+                        —
+                        {{ materia.nome }}
+                      </td>
+
+                      <td>
+                        <div class="form-group">
+                          <select name="professor_materia_{{ materia.id_materia }}">
+                            <option value="">Selecione</option>
+
+                            {% for professor, usuario_prof in professores_por_materia.get(materia.id_materia, []) %}
+                              <option
+                                value="{{ professor.id_professor }}"
+                                {% if professor_selecionado.get(materia.id_materia) == professor.id_professor %}
+                                  selected
+                                {% endif %}
+                              >
+                                {{ usuario_prof.nome }}
+                              </option>
+                            {% endfor %}
+                          </select>
+                        </div>
+                      </td>
+                    </tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+
+            <div class="form-actions">
+              <a href="/turmas/" class="secondary-button">
+                Cancelar
+              </a>
+
+              <button type="submit" class="primary-button">
+                Salvar professores
+              </button>
+            </div>
+          {% else %}
+            <div class="empty-state">
+              <h2>Nenhuma matéria encontrada</h2>
+              <p>
+                A grade do curso ainda não possui matérias vinculadas para gerenciamento.
+              </p>
+            </div>
+          {% endif %}
+        </form>
+      </section>
+    </main>
+  </div>
+</body>
+</html>

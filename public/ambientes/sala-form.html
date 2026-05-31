@@ -1,54 +1,80 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Cadastrar sala - SIGMA</title>
-  </head>
-  <body>
-    <h1>Cadastrar sala</h1>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-    <p>Logado como {{ usuario.nome }} ({{ usuario.tipo }})</p>
+  <title>Cadastrar sala - SIGMA</title>
 
-    {% if erro %}
-      <p style="color: red;">{{ erro }}</p>
-    {% endif %}
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/form.css" />
+  <script src="/static/js/form.js" defer></script>
+</head>
 
-    <form action="/ambientes/salas" method="post">
-      <div>
-        <label for="numero">Número / Identificação</label>
-        <input
-          type="text"
-          id="numero"
-          name="numero"
-          value="{{ valores.numero if valores else '' }}"
-          required
-        />
-      </div>
+<body>
+  <div class="form-page">
+    <main class="form-shell">
+      <header class="form-header">
+        <a href="/ambientes/salas" class="text-link">
+          ← Voltar para salas
+        </a>
 
-      <div>
-        <label for="tipo">Tipo</label>
-        <select id="tipo" name="tipo" required>
-          <option value="">Selecione</option>
-          {% for t in tipos %}
-            <option value="{{ t }}" {% if valores and valores.tipo == t %}selected{% endif %}>
-              {{ t }}
-            </option>
-          {% endfor %}
-        </select>
-      </div>
-      <div>
-        <button type="submit">Salvar</button>
-      </div>
-    </form>
+        <div>
+          <p class="eyebrow">Administração de ambientes</p>
+          <h1>Cadastrar sala</h1>
+          <p class="subtitle">
+            Registre um ambiente físico para uso em aulas, projetos e operações.
+          </p>
+        </div>
+      </header>
 
-    <p>
-      <a href="/ambientes/salas">Voltar para salas</a>
-    </p>
+      {% if erro %}
+        <div class="form-alert">
+          {{ erro }}
+        </div>
+      {% endif %}
 
-    <p>
-      <a href="/admin/dashboard">Dashboard</a>
-      <a href="/logout">Sair</a>
-    </p>
-  </body>
+      <section class="section-card form-card">
+        <form action="/ambientes/salas" method="post" class="sigma-form">
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="numero">Número / Identificação</label>
+              <input
+                type="text"
+                id="numero"
+                name="numero"
+                value="{{ valores.numero if valores else '' }}"
+                placeholder="Ex: Sala 203, Lab. 1, Auditório"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="tipo">Tipo</label>
+              <select id="tipo" name="tipo" required>
+                <option value="">Selecione</option>
+
+                {% for t in tipos %}
+                  <option value="{{ t }}" {% if valores and valores.tipo == t %}selected{% endif %}>
+                    {{ t }}
+                  </option>
+                {% endfor %}
+              </select>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <a href="/ambientes/salas" class="secondary-button">
+              Cancelar
+            </a>
+
+            <button type="submit" class="primary-button">
+              Salvar sala
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </div>
+</body>
 </html>

@@ -1,80 +1,181 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
-    <meta charset="UTF-8">
-    <title>Substituição RFID</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Substituição RFID - SIGMA</title>
+
+  <link rel="stylesheet" href="/static/css/dashboard.css" />
+  <link rel="stylesheet" href="/static/css/list.css" />
+
+  <script src="/static/js/list.js" defer></script>
 </head>
+
 <body>
-    <h1>Substituição de RFID</h1>
+  <div class="list-page">
 
-    <p>Operador: {{ usuario.nome }}</p>
+    <header class="list-header">
+      <div>
+        <p class="eyebrow">Segurança patrimonial</p>
 
-    <nav>
-        <a href="/seguranca/dashboard">Dashboard</a> |
-        <a href="/seguranca/salas">Visão Geral das Salas</a> |
-        <a href="/seguranca/validacoes">Validações</a> |
-        <a href="/seguranca/auditoria">Auditoria de eventos</a> |
-        <a href="/logout">Sair</a>
-    </nav>
+        <h1>Substituição de RFID</h1>
 
-    <hr>
+        <p class="subtitle">
+          Localize alunos e realize a substituição de identificadores RFID.
+        </p>
+      </div>
 
-    <h2>Buscar aluno</h2>
+      <div class="header-actions">
+        <a
+          href="/seguranca/dashboard"
+          class="secondary-button"
+        >
+          Dashboard
+        </a>
+      </div>
+    </header>
 
-    <form method="GET" action="/seguranca/rfid">
-        <input
+    <section class="section-card filter-card">
+
+      <div class="section-header">
+        <div>
+          <h2>Buscar aluno</h2>
+          <p>
+            Procure por nome ou e-mail institucional.
+          </p>
+        </div>
+      </div>
+
+      <form
+        method="GET"
+        action="/seguranca/rfid"
+        class="filter-form"
+      >
+
+        <div class="form-group">
+          <label for="busca">
+            Nome ou e-mail
+          </label>
+
+          <input
             type="text"
+            id="busca"
             name="busca"
             value="{{ busca }}"
-            placeholder="Nome ou email do aluno"
-        >
+            placeholder="Ex.: João Silva"
+          />
+        </div>
 
-        <button type="submit">Buscar</button>
+        <div class="filter-actions">
+          <button
+            type="submit"
+            class="primary-button"
+          >
+            Buscar
+          </button>
 
-        {% if busca %}
-            <a href="/seguranca/rfid">Limpar</a>
-        {% endif %}
-    </form>
+          {% if busca %}
+            <a
+              href="/seguranca/rfid"
+              class="secondary-button"
+            >
+              Limpar
+            </a>
+          {% endif %}
+        </div>
 
-    <hr>
+      </form>
 
-    <h2>Alunos</h2>
+    </section>
 
-    {% if alunos %}
-        <table border="1" cellpadding="6" cellspacing="0">
+    <section class="section-card">
+
+      {% if alunos %}
+
+        <div class="table-wrapper">
+
+          <table class="sigma-table">
+
             <thead>
-                <tr>
-                    <th>Nome</th>
-                    <th>Email</th>
-                    <th>TAG ativa</th>
-                    <th>Ação</th>
-                </tr>
+              <tr>
+                <th>Nome</th>
+                <th>E-mail</th>
+                <th>TAG ativa</th>
+                <th>Ação</th>
+              </tr>
             </thead>
 
             <tbody>
-                {% for aluno in alunos %}
-                    {% set tag = tags_por_usuario.get(aluno.id_usuario) %}
-                    <tr>
-                        <td>{{ aluno.nome }}</td>
-                        <td>{{ aluno.email }}</td>
-                        <td>
-                            {% if tag %}
-                                {{ tag.codigo }}
-                            {% else %}
-                                Sem TAG ativa
-                            {% endif %}
-                        </td>
-                        <td>
-                            <a href="/seguranca/rfid/{{ aluno.id_usuario }}">
-                                Substituir TAG
-                            </a>
-                        </td>
-                    </tr>
-                {% endfor %}
+
+              {% for aluno in alunos %}
+                {% set tag = tags_por_usuario.get(aluno.id_usuario) %}
+
+                <tr>
+
+                  <td>
+                    {{ aluno.nome }}
+                  </td>
+
+                  <td>
+                    {{ aluno.email }}
+                  </td>
+
+                  <td>
+
+                    {% if tag %}
+
+                      <span class="status-badge status-finalizado">
+                        {{ tag.codigo }}
+                      </span>
+
+                    {% else %}
+
+                      <span class="status-badge status-cancelado">
+                        Sem TAG ativa
+                      </span>
+
+                    {% endif %}
+
+                  </td>
+
+                  <td>
+
+                    <a
+                      href="/seguranca/rfid/{{ aluno.id_usuario }}"
+                      class="primary-button"
+                    >
+                      Substituir TAG
+                    </a>
+
+                  </td>
+
+                </tr>
+
+              {% endfor %}
+
             </tbody>
-        </table>
-    {% else %}
-        <p>Nenhum aluno encontrado.</p>
-    {% endif %}
+
+          </table>
+
+        </div>
+
+      {% else %}
+
+        <div class="empty-state">
+
+          <h2>Nenhum aluno encontrado</h2>
+
+          <p>
+            Não foram encontrados alunos para os critérios informados.
+          </p>
+
+        </div>
+
+      {% endif %}
+
+    </section>
+
+  </div>
 </body>
 </html>

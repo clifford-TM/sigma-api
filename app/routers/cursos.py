@@ -24,7 +24,7 @@ def listar_cursos(
 
     return templates.TemplateResponse(
         request=request,
-        name="cursos/index.html",
+        name="cursos/cursos-lista.html",
         context={
             "usuario": current_user,
             "cursos": cursos,
@@ -190,7 +190,7 @@ def gerenciar_grade_curso(
 
     return templates.TemplateResponse(
         request=request,
-        name="cursos/grade.html",
+        name="cursos/cursos-grade.html",
         context={
             "usuario": current_user,
             "curso": curso,

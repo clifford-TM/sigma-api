@@ -1,227 +1,253 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>
-      {% if usuario.tipo == "aluno" %}
-        Meus projetos - SIGMA
-      {% else %}
-        Meus eventos - SIGMA
-      {% endif %}
-    </title>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <script>
-      async function iniciarEvento(eventoId) {
-        try {
-          const resposta = await fetch(`/eventos/${eventoId}/iniciar`, {
-            method: "POST"
-          });
+  <title>
+    {% if usuario.tipo == "aluno" %}
+      Meus projetos - SIGMA
+    {% else %}
+      Meus eventos - SIGMA
+    {% endif %}
+  </title>
 
-          if (resposta.ok || resposta.redirected) {
-            alert("Pedido de início enviado.\n\nAproxime a tag do responsável no leitor RFID.");
-            location.reload();
-            return;
-          }
+  <link rel="stylesheet" href="/static/css/dashboard.css">
+  <link rel="stylesheet" href="/static/css/list.css">
 
-          const dados = await resposta.json();
-          alert("Erro ao iniciar evento: " + (dados.detail || "erro desconhecido"));
-        } catch (erro) {
-          console.error(erro);
-          alert("Falha ao comunicar com o servidor.");
-        }
-      }
+  <script src="/static/js/list.js" defer></script>
+</head>
 
-      async function encerrarEvento(eventoId) {
-        try {
-          const resposta = await fetch(`/eventos/${eventoId}/disparar-fim`, {
-            method: "POST"
-          });
+<body>
+  <div class="list-page">
 
-          const dados = await resposta.json();
+    <header class="list-header">
 
-          if (resposta.ok) {
-            alert("Pedido de encerramento enviado.\n\nAproxime novamente a tag do responsável no leitor RFID.");
-            location.reload();
-          } else {
-            alert("Erro ao encerrar evento: " + (dados.detail || "erro desconhecido"));
-          }
-        } catch (erro) {
-          console.error(erro);
-          alert("Falha ao comunicar com o servidor.");
-        }
-      }
-    </script>
-  </head>
+      <div>
+        <p class="eyebrow">
+          Gestão de eventos
+        </p>
 
-  <body>
-   <h1>
-      {% if usuario.tipo == "aluno" %}
-        Meus projetos
-      {% else %}
-        Meus eventos
-      {% endif %}
-    </h1>
+        <h1>
+          {% if usuario.tipo == "aluno" %}
+            Meus projetos
+          {% else %}
+            Meus eventos
+          {% endif %}
+        </h1>
+
+        <p class="subtitle">
+          Histórico e acompanhamento dos eventos cadastrados.
+        </p>
+      </div>
+
+      <div class="header-actions">
+
+        {% if usuario.tipo == "professor" %}
+          <a href="/professor/dashboard" class="secondary-button">
+            Dashboard
+          </a>
+
+        {% elif usuario.tipo == "aluno" %}
+          <a href="/aluno/dashboard" class="secondary-button">
+            Dashboard
+          </a>
+
+        {% elif usuario.tipo == "seguranca" %}
+          <a href="/seguranca/dashboard" class="secondary-button">
+            Dashboard
+          </a>
+
+        {% elif usuario.tipo == "tecnico" %}
+          <a href="/tecnico/dashboard" class="secondary-button">
+            Dashboard
+          </a>
+
+        {% elif usuario.tipo == "zelador" %}
+          <a href="/zelador/dashboard" class="secondary-button">
+            Dashboard
+          </a>
+
+        {% elif usuario.tipo == "admin" %}
+          <a href="/admin/dashboard" class="secondary-button">
+            Dashboard
+          </a>
+        {% endif %}
+
+        <a href="/logout" class="secondary-button">
+          Sair
+        </a>
+
+      </div>
+
+    </header>
 
     {% if mensagem %}
-      <p style="color: green;">
+      <div class="success-alert">
         {{ mensagem }}
-      </p>
+      </div>
     {% endif %}
 
-    <p>Bem-vindo, {{ usuario.nome }}</p>
+    <section class="section-card">
 
-    <nav>
-      {% if usuario.tipo == "professor" %}
-        <a href="/professor/dashboard">Dashboard</a>
-      {% elif usuario.tipo == "aluno" %}
-        <a href="/aluno/dashboard">Dashboard</a>
-      {% elif usuario.tipo == "seguranca" %}
-        <a href="/seguranca/dashboard">Dashboard</a>
-      {% elif usuario.tipo == "tecnico" %}
-        <a href="/tecnico/dashboard">Dashboard</a>
-      {% elif usuario.tipo == "zelador" %}
-        <a href="/zelador/dashboard">Dashboard</a>
-      {% elif usuario.tipo == "admin" %}
-        <a href="/admin/dashboard">Dashboard</a>
+      {% if eventos %}
+
+        <div class="table-wrapper">
+
+          <table class="sigma-table">
+
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Tipo</th>
+                <th>Sala</th>
+                <th>Status</th>
+                <th>Início</th>
+                <th>Fim</th>
+                <th>Descrição</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+
+            <tbody>
+
+              {% for evento in eventos %}
+              <tr>
+
+                <td>#{{ evento.id_evento }}</td>
+
+                <td>
+                  {{ evento.tipo|capitalize }}
+                </td>
+
+                <td>
+                  {% if evento.sala_id in salas %}
+                    {{ salas[evento.sala_id].numero }}
+                  {% else %}
+                    —
+                  {% endif %}
+                </td>
+
+                <td>
+
+                  <span class="status-badge status-{{ evento.status }}">
+                    {% if usuario.tipo == "aluno" and evento.status == "pendente_aprovacao" %}
+                      Pendente de aprovação
+                    {% elif evento.status == "agendado" %}
+                      Agendado
+                    {% elif evento.status == "pendente" %}
+                      Aguardando RFID
+                    {% elif evento.status == "ativo" %}
+                      Em andamento
+                    {% elif evento.status == "encerrando" %}
+                      Encerrando
+                    {% elif evento.status == "finalizado" %}
+                      Finalizado
+                    {% elif evento.status == "cancelado" %}
+                      Cancelado
+                    {% elif evento.status == "nao_realizado" %}
+                      Não realizado
+                    {% else %}
+                      {{ evento.status }}
+                    {% endif %}
+                  </span>
+
+                </td>
+
+                <td>
+                  {{ evento.inicio_previsto if evento.inicio_previsto else "-" }}
+                </td>
+
+                <td>
+                  {{ evento.fim_previsto if evento.fim_previsto else "-" }}
+                </td>
+
+                <td>
+                  {{ evento.descricao if evento.descricao else "-" }}
+                </td>
+
+                <td>
+
+                  <div class="action-group">
+
+                    {% if evento.status == "agendado" %}
+
+                      <button
+                        class="primary-button"
+                        data-action="iniciar-evento"
+                        data-evento-id="{{ evento.id_evento }}"
+                      >
+                        Iniciar
+                      </button>
+
+                      <a
+                        href="/eventos/{{ evento.id_evento }}/editar"
+                        class="secondary-button"
+                      >
+                        Editar
+                      </a>
+
+                      <a
+                        href="/eventos/{{ evento.id_evento }}/cancelar"
+                        class="danger-button"
+                        data-confirm="Deseja cancelar este evento?"
+                      >
+                        Cancelar
+                      </a>
+
+                    {% elif evento.status == "ativo" %}
+
+                      <button
+                        class="danger-button"
+                        data-action="encerrar-evento"
+                        data-evento-id="{{ evento.id_evento }}"
+                      >
+                        Encerrar
+                      </button>
+
+                    {% else %}
+
+                      <span class="action-placeholder">
+                        —
+                      </span>
+
+                    {% endif %}
+
+                  </div>
+
+                </td>
+
+              </tr>
+              {% endfor %}
+
+            </tbody>
+
+          </table>
+
+        </div>
+
+      {% else %}
+
+        <div class="empty-state">
+
+          <h2>
+            Nenhum evento encontrado
+          </h2>
+
+          <p>
+            {% if usuario.tipo == "aluno" %}
+              Você ainda não possui projetos cadastrados.
+            {% else %}
+              Você ainda não possui eventos cadastrados.
+            {% endif %}
+          </p>
+
+        </div>
+
       {% endif %}
 
-      |
+    </section>
 
-      {% if usuario.tipo == "professor" %}
-        <a href="/eventos/novo?tipo=aula">Nova aula</a> |
-        <a href="/eventos/novo?tipo=projeto">Novo projeto</a>
-      {% elif usuario.tipo == "aluno" %}
-        <a href="/eventos/novo?tipo=projeto">Novo projeto</a>
-      {% elif usuario.tipo == "zelador" %}
-        <a href="/eventos/novo?tipo=limpeza">Nova limpeza</a>
-      {% elif usuario.tipo == "tecnico" %}
-        <a href="/eventos/novo?tipo=manutencao">Nova manutenção</a>
-      {% elif usuario.tipo == "seguranca" %}
-        <a href="/eventos/novo?tipo=inspecao">Nova inspeção</a>
-      {% elif usuario.tipo == "admin" %}
-        <a href="/eventos/novo?tipo=aula">Nova aula</a> |
-        <a href="/eventos/novo?tipo=projeto">Novo projeto</a> |
-        <a href="/eventos/novo?tipo=limpeza">Nova limpeza</a> |
-        <a href="/eventos/novo?tipo=manutencao">Nova manutenção</a> |
-        <a href="/eventos/novo?tipo=inspecao">Nova inspeção</a>
-      {% endif %}
-
-      |
-
-      <a href="/logout">Sair</a>
-    </nav>
-
-    <hr />
-
-    {% if eventos %}
-      <table border="1" cellpadding="8">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Tipo</th>
-            <th>Sala</th>
-            <th>Status</th>
-            <th>Início previsto</th>
-            <th>Fim previsto</th>
-            <th>Descrição</th>
-            <th>Ações</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {% for evento in eventos %}
-            <tr>
-              <td>{{ evento.id_evento }}</td>
-              <td>{{ evento.tipo }}</td>
-
-              <td>
-                {% if evento.sala_id in salas %}
-                  {{ salas[evento.sala_id].numero }}
-                {% else %}
-                  Sala não encontrada
-                {% endif %}
-              </td>
-
-              <td>
-                {% if usuario.tipo == "aluno" and evento.status == "pendente_aprovacao" %}
-                  Pendente de aprovação
-                {% elif evento.status == "agendado" %}
-                  Agendado
-                {% elif evento.status == "pendente" %}
-                  Aguardando RFID
-                {% elif evento.status == "ativo" %}
-                  Em andamento
-                {% elif evento.status == "encerrando" %}
-                  Encerrando
-                {% elif evento.status == "finalizado" %}
-                  Finalizado
-                {% elif evento.status == "cancelado" %}
-                  Cancelado
-                {% elif evento.status == "nao_realizado" %}
-                  Não realizado
-                {% else %}
-                  {{ evento.status }}
-                {% endif %}
-              </td>
-
-              <td>{{ evento.inicio_previsto if evento.inicio_previsto else "-" }}</td>
-              <td>{{ evento.fim_previsto if evento.fim_previsto else "-" }}</td>
-              <td>{{ evento.descricao if evento.descricao else "-" }}</td>
-
-              <td>
-                {% if evento.status == "agendado" %}
-                  <button type="button" onclick="iniciarEvento({{ evento.id_evento }})">
-                    {% if usuario.tipo == "aluno" %}
-                      Iniciar projeto
-                    {% else %}
-                      Iniciar
-                    {% endif %}
-                  </button>
-                  |
-                  <a href="/eventos/{{ evento.id_evento }}/editar">Editar</a>
-                  |
-                  <a href="/eventos/{{ evento.id_evento }}/cancelar">Cancelar</a>
-
-                {% elif evento.status == "pendente" and usuario.tipo == "aluno" %}
-                  Aguardando aprovação do professor
-
-                {% elif evento.status == "pendente" %}
-                  Aguardando confirmação no dispositivo...
-                  |
-                  <a href="/eventos/{{ evento.id_evento }}/cancelar">Cancelar</a>
-
-                {% elif evento.status == "ativo" %}
-                  <button type="button" onclick="encerrarEvento({{ evento.id_evento }})">
-                    {% if usuario.tipo == "aluno" %}
-                      Encerrar projeto
-                    {% else %}
-                      Encerrar
-                    {% endif %}
-                  </button>
-
-                {% elif evento.status == "encerrando" %}
-                  Aguardando encerramento no dispositivo...
-
-                {% elif evento.status == "nao_realizado" %}
-                  Evento não iniciado dentro da janela de tolerância.
-
-                {% else %}
-                  -
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        </tbody>
-      </table>
-    {% else %}
-      <p>
-        {% if usuario.tipo == "aluno" %}
-          Você ainda não possui projetos cadastrados.
-        {% else %}
-          Você ainda não possui eventos cadastrados.
-        {% endif %}
-      </p>
-    {% endif %}
-  </body>
+  </div>
+</body>
 </html>
